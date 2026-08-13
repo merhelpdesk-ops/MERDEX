@@ -1,0 +1,256 @@
+@import "@orderly.network/ui/dist/styles.css";
+
+:root {
+  color: #f7f8fa;
+  background: #080c11;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+  color-scheme: dark;
+  --oui-color-primary: 102 137 72;
+  --oui-color-primary-light: 123 158 89;
+  --oui-color-primary-contrast: 255 255 255;
+  --oui-color-base-3: 56 75 105;
+  --oui-color-base-8: 13 20 35;
+  --oui-color-base-foreground: 255 255 255;
+  --oui-color-line: 255 255 255;
+  --oui-gradient-primary-start: 70 209 199;
+  --oui-gradient-primary-end: 115 215 88;
+  --oui-rounded-lg: 8px;
+  --oui-rounded-xl: 12px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-width: 320px;
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-height: 100vh;
+  background: #080c11;
+}
+
+.mer-orderly-scaffold {
+  min-height: 100vh;
+  background: #080c11;
+}
+
+.mer-scaffold-logo {
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+
+.mer-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
+}
+
+.mer-swap-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  /* Expanded WooFi needs 1257px before the surrounding paddings. */
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 64px 32px 80px;
+}
+
+.mer-hero {
+  width: 100%;
+  margin-bottom: 48px;
+  text-align: center;
+}
+
+.mer-hero h1 {
+  margin: 0;
+  background: linear-gradient(90deg, #25c8f1 18%, #64dc98 68%, #a4dc38);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  font-size: clamp(42px, 5vw, 62px);
+  font-weight: 500;
+  letter-spacing: .01em;
+}
+
+.mer-hero p {
+  max-width: 660px;
+  margin: 22px auto 0;
+  color: #a5a4af;
+  font-size: clamp(17px, 2vw, 22px);
+  line-height: 1.5;
+}
+
+.mer-trade-card {
+  width: 100%;
+  padding: 44px 48px 48px;
+  border: 1px solid rgba(180, 196, 210, .18);
+  border-radius: 32px;
+  background: rgba(8, 12, 17, .7);
+}
+
+.mer-product-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  width: min(100%, 720px);
+  margin: 0 auto 32px;
+  padding: 5px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 18px;
+  background: #191d23;
+}
+
+.mer-product-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 52px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  color: #a9a9b0;
+  font-size: 18px;
+  text-decoration: none;
+}
+
+.mer-product-tab.is-active {
+  border-color: rgba(79, 207, 169, .36);
+  background: #20242a;
+  box-shadow: 0 0 20px rgba(40, 202, 151, .08);
+  color: #fff;
+  font-weight: 700;
+}
+
+.mer-product-tab:not(.is-active):hover {
+  color: #fff;
+}
+
+.mer-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #20ae62;
+  box-shadow: 0 0 0 4px rgba(32, 174, 98, .17), 0 0 12px #20ae62;
+}
+
+.mer-swap-widget-container {
+  width: 100%;
+  /* The expanded widget renders a 797px chart beside its 460px swap panel. */
+  max-width: 1280px;
+  margin: 0 auto;
+  container: mer-swap-widget / inline-size;
+}
+
+.mer-swap-widget-container>* {
+  width: 100%;
+}
+
+/* Keep the expanded chart inside the available viewport instead of allowing
+   the widget's fixed desktop chart width to be clipped by its host. */
+.mer-swap-widget-container .dex .main {
+  width: 100%;
+}
+
+.mer-swap-widget-container .dex .chart {
+  flex: 1 1 797px;
+  min-width: 0;
+  max-width: 797px;
+}
+
+/* Use the widget's real available width, not the browser width. */
+@container mer-swap-widget (max-width: 1256px) {
+  .mer-swap-widget-container .dex .main {
+    flex-direction: column-reverse;
+    align-items: center;
+  }
+
+  .mer-swap-widget-container .dex .swap-wrap {
+    width: min(100%, 460px);
+    flex: none;
+  }
+
+  .mer-swap-widget-container .dex .chart {
+    width: min(100%, 797px);
+    max-width: 797px;
+    flex: none;
+  }
+}
+
+.el-button.el-button--primary {
+  background: rgb(var(--oui-color-primary)) !important;
+  border-color: rgb(var(--oui-color-primary)) !important;
+  color: white !important;
+}
+
+.el-button.el-button--primary:hover {
+  background: rgb(var(--oui-color-primary-light)) !important;
+  border-color: rgb(var(--oui-color-primary-light)) !important;
+}
+
+.dex .swap {
+  background: linear-gradient(135deg, rgb(var(--oui-gradient-primary-start)) 0%, rgb(var(--oui-gradient-primary-end)) 100%) !important;
+  border-radius: var(--oui-rounded-lg) !important;
+  border: 1px solid rgba(93, 183, 126, .2) !important;
+}
+
+.dex .swap .block,
+.el-dialog {
+  background: rgb(var(--oui-color-base-8)) !important;
+  border: 1px solid rgba(255, 255, 255, .1) !important;
+  border-radius: var(--oui-rounded-lg) !important;
+}
+
+.coin-input .input-main,
+.dex .swap input {
+  background: rgb(var(--oui-color-base-3)) !important;
+  color: rgb(var(--oui-color-base-foreground)) !important;
+  border-radius: var(--oui-rounded-xl) !important;
+}
+
+@media (max-width: 640px) {
+  .mer-swap-content {
+    padding: 58px 10px 32px;
+  }
+
+  .mer-hero {
+    margin-bottom: 44px;
+    padding: 0 24px;
+  }
+
+  .mer-hero h1 {
+    font-size: 42px;
+  }
+
+  .mer-hero p {
+    margin-top: 20px;
+    font-size: 17px;
+  }
+
+  .mer-trade-card {
+    padding: 38px 10px 24px;
+    border-radius: 30px;
+  }
+
+  .mer-product-tabs {
+    margin-bottom: 24px;
+    border-radius: 16px;
+  }
+
+  .mer-product-tab {
+    min-height: 50px;
+    font-size: 17px;
+  }
+
+}
