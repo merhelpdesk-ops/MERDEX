@@ -41,7 +41,6 @@ function htmlTitlePlugin(): Plugin {
 
 export default defineConfig(() => {
   const basePath = process.env.PUBLIC_PATH || "/";
-  const isVercelBuild = process.env.VERCEL === "1";
 
   return {
     server: {
@@ -62,19 +61,6 @@ export default defineConfig(() => {
     ],
     build: {
       outDir: "dist",
-    },
-    resolve: {
-      alias: isVercelBuild
-        ? [
-            {
-              find: /^@\/components\/WooFiWidget$/,
-              replacement: path.resolve(
-                __dirname,
-                "app/components/WooFiWidgetUnavailable.tsx",
-              ),
-            },
-          ]
-        : [],
     },
     optimizeDeps: {
       include: ["react", "react-dom", "react-router-dom"],
