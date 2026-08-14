@@ -180,12 +180,12 @@ function writeManifestFiles(manifest: object) {
   writeFileSync(publicPath, JSON.stringify(manifest, null, 2));
   console.log("✓ Generated: public/manifest.json");
 
-  const buildPath = join(__dirname, "../build/client/manifest.json");
+  const buildPath = join(__dirname, "../dist/manifest.json");
   const buildDir = dirname(buildPath);
 
   if (existsSync(buildDir)) {
     writeFileSync(buildPath, JSON.stringify(manifest, null, 2));
-    console.log("✓ Generated: build/client/manifest.json");
+    console.log("✓ Generated: dist/manifest.json");
   }
 }
 

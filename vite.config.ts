@@ -61,7 +61,7 @@ export default defineConfig(() => {
       }),
     ],
     build: {
-      outDir: "build/client",
+      outDir: "dist",
     },
     resolve: {
       alias: isVercelBuild
