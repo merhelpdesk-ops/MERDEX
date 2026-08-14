@@ -17,6 +17,7 @@ export default function SwapLayout() {
         customRender: (components) => (
           <div className="oui-flex oui-w-full oui-items-center oui-justify-end oui-gap-3">
             <div className="oui-flex oui-items-center oui-gap-2">
+              {components.languageSwitcher}
               {components.chainMenu}
               {components.walletConnect}
             </div>
