@@ -44,3 +44,8 @@
   background: rgb(var(--oui-color-base-3)) !important;
   color: rgb(var(--oui-color-base-foreground)) !important;
 }
+
+.dex.is-widget .chart,
+.dex.is-widget .top-left {
+  display: none !important;
+}

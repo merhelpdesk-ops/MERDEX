@@ -35,6 +35,7 @@ export default function WooFiWidget() {
         enableMerlin: false,
         enableHyperevm: false,
         enableZksync: false,
+        initialLineChartVisible: false,
       }}
     />
   );
