@@ -9,3 +9,7 @@ export function getRuntimeConfig(key: string): string | undefined {
   if (runtimeValue) return runtimeValue;
   return import.meta.env[key];
 }
+
+export function getRuntimeConfigBoolean(key: string): boolean {
+  return getRuntimeConfig(key)?.toLowerCase() === "true";
+}

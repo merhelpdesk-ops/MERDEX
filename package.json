@@ -8,19 +8,29 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && NODE_OPTIONS='--max-old-space-size=8192' vite build",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@binance/w3w-blocknative-connector": "^1.1.12",
     "@orderly.network/hooks": "3.1.8",
     "@orderly.network/i18n": "3.1.8",
     "@orderly.network/react-app": "3.1.8",
     "@orderly.network/ui": "3.1.8",
     "@orderly.network/ui-scaffold": "3.1.8",
     "@orderly.network/wallet-connector": "3.1.8",
+    "@orderly.network/wallet-connector-privy": "3.1.8",
+    "@privy-io/cross-app-connect": "^0.2.1",
+    "@solana-mobile/wallet-adapter-mobile": "^2.2.0",
+    "@solana/wallet-adapter-base": "^0.9.24",
+    "@solana/wallet-adapter-wallets": "^0.19.36",
+    "@tanstack/query-core": "^5.79.0",
+    "@web3-onboard/injected-wallets": "^2.11.3",
+    "@web3-onboard/walletconnect": "^2.5.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "woofi-swap-widget-kit": "^0.0.43"
+    "wagmi": "^2.15.4",
+    "woofi-swap-widget-kit": "0.0.43"
   },
   "devDependencies": {
     "@types/react": "^18.2.20",
