@@ -12,17 +12,11 @@ export default function SwapLayout() {
       mainNavProps={{
         ...config.scaffold.mainNavProps,
         initialMenu: "/swap",
-        mainMenus: [],
+        mainMenus: [{ name: "Swap", href: "/swap" }],
         campaigns: undefined,
         customRender: (components) => (
-          <div className="oui-flex oui-w-full oui-items-center oui-justify-between oui-gap-3">
-            <div className="oui-flex oui-items-center">{components.title}</div>
+          <div className="oui-flex oui-w-full oui-items-center oui-justify-end oui-gap-3">
             <div className="oui-flex oui-items-center oui-gap-2">
-              {components.accountSummary}
-              {components.linkDevice}
-              {components.scanQRCode}
-              {components.languageSwitcher}
-              {components.subAccount}
               {components.chainMenu}
               {components.walletConnect}
             </div>
