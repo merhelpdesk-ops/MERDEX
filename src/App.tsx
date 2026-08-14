@@ -97,7 +97,7 @@ export default function App() {
       >
         <main className="mer-swap-content">
           <section className="mer-hero">
-            <h1>MERDEX</h1>
+            <h1>MERDEX Beta</h1>
             <p>MERDEX is a secure and high-speed aggregate platform.</p>
           </section>
 
