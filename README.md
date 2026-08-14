@@ -1,27 +1,113 @@
-# MERDEX Swap
+# Orderly Broker UI Template
 
-从 MER-Perps-Global 中独立出来的 Swap 单页项目。它只保留 WooFi Swap、Orderly 钱包连接和链切换能力，不依赖原项目的路由或其他业务页面。
+This template provides a quick way to set up a customized trading UI for Orderly Network brokers, built with Remix and deployable on Vercel.
 
-## 启动
+🔗 [Live Demo](https://broker-template-seven.vercel.app/)
 
-```bash
-cd swap-app
+## Quick Start
+
+1. **Fork the Repository**
+   
+   Fork this repository to your GitHub account to create your broker's UI.
+
+2. **Clone Your Fork**
+
+```sh
+git clone https://github.com/YOUR_USERNAME/broker-template.git
+cd broker-template
+```
+
+3. **Install Dependencies**
+
+```sh
 yarn install
+cp .env.example .env.local
+```
+
+## Configuration Steps
+
+### 1. Environment Configuration
+
+The repository keeps a minimal `.env` for compatibility with existing forks.
+For local customization, copy `.env.example` to the ignored `.env.local` file,
+then edit `.env.local` to configure the broker and application metadata.
+Variables prefixed with `VITE_` are exposed to the browser by Vite, so do not put
+private keys, passwords, or other secrets in this file.
+
+```env
+# Broker settings
+VITE_ORDERLY_BROKER_ID=your_broker_id
+VITE_ORDERLY_BROKER_NAME=Your Broker Name
+VITE_DEPLOYMENT_ENV=mainnet  # use testnet for testing
+
+# Application metadata
+VITE_APP_NAME=Your App Name
+VITE_APP_DESCRIPTION=Your app description for SEO
+
+# Navigation menu configuration (optional)
+VITE_ENABLED_MENUS=Trading,Portfolio,Markets,Leaderboard
+VITE_CUSTOM_MENUS=Documentation,https://docs.yoursite.com;Blog,https://blog.yoursite.com;Support,https://support.yoursite.com
+```
+
+`VITE_DEPLOYMENT_ENV` controls whether the app connects to Orderly mainnet or
+testnet. Restart the development server after changing `.env.local`; production
+deployments must be rebuilt so the new values are included.
+
+For deployments that use runtime configuration, values in `public/config.js`
+(`window.__RUNTIME_CONFIG__`) take precedence over the corresponding `.env.local`
+values. This allows configuration changes without rebuilding the application.
+
+### 2. Theme Customization
+
+1. Visit the [Orderly Storybook Trading Page](https://storybook.orderly.network/?path=/story/package-trading-tradingpage--page)
+2. Customize your preferred theme using the controls
+3. Export the generated CSS
+4. Replace the contents of `app/styles/theme.css` with your exported CSS
+
+### 3. UI Configuration
+
+Edit `app/utils/config.tsx` to customize your UI:
+
+- **Footer Links**: Update `footerProps` with your social media links
+- **Logos**: Replace the main and secondary logos in the `appIcons` section
+- **PnL Sharing**: Customize the PnL poster backgrounds and colors in `sharePnLConfig`
+
+Required assets:
+- Place your logos in the `public` directory:
+  - Main logo: `public/orderly-logo.svg`
+  - Secondary logo: `public/orderly-logo-secondary.svg`
+  - Favicon: `public/favicon.webp`
+- PnL sharing backgrounds: `public/pnl/poster_bg_[1-4].png`
+
+## Development
+
+Run the development server:
+
+```sh
 yarn dev
 ```
 
-生产构建：
+## Deployment
 
-```bash
+1. Build the application:
+
+```sh
 yarn build
 ```
 
-## 配置
+2. Deploy to Vercel:
+   - Create an account on [Vercel](https://vercel.com) if you haven't already
+   - Install Vercel CLI: `yarn global add vercel`
+   - Run `vercel` in your project directory and follow the prompts
+   - For subsequent deployments, use `vercel --prod` to deploy to production
 
-复制 `.env.example` 为 `.env.local`，或直接修改 `public/config.js`。运行时配置优先级高于构建时环境变量。
+For custom domain setup:
+   - Go to your project settings in Vercel dashboard
+   - Navigate to the "Domains" section
+   - Add and configure your custom domain
 
-- `VITE_BROKER_EOA_ADDRESS`：WooFi broker 地址。
-- `VITE_ORDERLY_BROKER_ID`：Orderly broker ID，用于官方应用外框和账户状态。
-- `VITE_ORDERLY_BROKER_NAME`：Orderly 外框中显示的 broker 名称。
-- `VITE_PERPS_REDIRECT_URL`：点击 Perps 标签时跳转的地址。
-- `PUBLIC_PATH`：可选的部署子路径，例如 `/swap/`。
+## Additional Resources
+
+- [Orderly JS SDK Documentation](https://github.com/OrderlyNetwork/js-sdk)
+- [Orderly Network Documentation](https://orderly.network/docs/sdks)
+- [Storybook Theme Editor](https://storybook.orderly.network/?path=/story/package-trading-tradingpage--page)

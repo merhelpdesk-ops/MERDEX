@@ -1,44 +1,97 @@
 {
-  "name": "merdex-swap",
-  "version": "1.0.0",
+  "name": "dex-creator-template",
+  "description": "Template for Orderly SDK",
   "private": true,
+  "sideEffects": false,
   "type": "module",
   "engines": {
     "node": ">=20.0.0"
   },
   "scripts": {
-    "dev": "vite",
-    "build": "tsc --noEmit && NODE_OPTIONS='--max-old-space-size=8192' vite build",
-    "preview": "vite preview"
+    "build": "tsx scripts/generate-manifest.ts && NODE_OPTIONS='--max-old-space-size=8192' vite build && tsx scripts/generate-manifest.ts",
+    "build:spa": "tsx scripts/generate-manifest.ts && NODE_OPTIONS='--max-old-space-size=8192' tsx build.ts && tsx scripts/generate-manifest.ts",
+    "dev": "tsx scripts/generate-manifest.ts && vite",
+    "generate:manifest": "tsx scripts/generate-manifest.ts",
+    "lint": "eslint --cache --cache-location ./node_modules/.cache/eslint .",
+    "prepare": "husky",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc"
   },
   "dependencies": {
-    "@binance/w3w-blocknative-connector": "^1.1.12",
-    "@orderly.network/hooks": "3.1.8",
+    "@orderly.network/core": "3.1.8",
+    "@orderly.network/affiliate": "3.1.8",
     "@orderly.network/i18n": "3.1.8",
+    "@orderly.network/hooks": "3.1.8",
+    "@orderly.network/markets": "3.1.8",
+    "@orderly.network/portfolio": "3.1.8",
     "@orderly.network/react-app": "3.1.8",
+    "@orderly.network/trading": "3.1.8",
+    "@orderly.network/trading-leaderboard": "3.1.8",
+    "@orderly.network/trading-points": "2.0.2",
+    "@orderly.network/types": "3.1.8",
     "@orderly.network/ui": "3.1.8",
     "@orderly.network/ui-scaffold": "3.1.8",
+    "@orderly.network/vaults": "3.1.8",
     "@orderly.network/wallet-connector": "3.1.8",
     "@orderly.network/wallet-connector-privy": "3.1.8",
+    "@plausible-analytics/tracker": "0.4.5",
     "@privy-io/cross-app-connect": "^0.2.1",
     "@solana-mobile/wallet-adapter-mobile": "^2.2.0",
     "@solana/wallet-adapter-base": "^0.9.24",
     "@solana/wallet-adapter-wallets": "^0.19.36",
     "@tanstack/query-core": "^5.79.0",
-    "@web3-onboard/injected-wallets": "^2.11.3",
-    "@web3-onboard/walletconnect": "^2.5.5",
+    "@web3-onboard/walletconnect": "^2.6.2",
+    "firebase": "12.16.0",
+    "ip-range-check": "^0.2.0",
+    "isbot": "^4.1.0",
+    "lucide-react": "^0.544.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-helmet-async": "^2.0.5",
+    "react-router-dom": "^7.1.3",
+    "stream-browserify": "^3.0.0",
     "wagmi": "^2.15.4",
-    "woofi-swap-widget-kit": "0.0.43"
+    "woofi-swap-widget-kit": "^0.0.43",
+    "zod": "4.4.3"
   },
   "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "^5.2.2",
+    "@types/node": "^20.11.30",
     "@types/react": "^18.2.20",
     "@types/react-dom": "^18.2.7",
+    "@typescript-eslint/eslint-plugin": "^6.7.4",
+    "@typescript-eslint/parser": "^6.7.4",
     "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.19",
+    "eslint": "^8.38.0",
+    "eslint-import-resolver-typescript": "^3.6.1",
+    "eslint-plugin-import": "^2.28.1",
+    "eslint-plugin-jsx-a11y": "^6.7.1",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "fs-extra": "^11.3.0",
+    "husky": "^9.1.7",
+    "jsdom": "26.1.0",
+    "lint-staged": "^16.1.2",
+    "postcss": "^8.5.1",
+    "prettier": "^3.6.2",
+    "tailwindcss": "^3.4.4",
+    "tsx": "^4.19.4",
     "typescript": "5.8.3",
     "vite": "^7.1.9",
     "vite-plugin-cjs-interop": "^2.3.0",
-    "vite-plugin-node-polyfills": "0.24.0"
+    "vite-plugin-node-polyfills": "0.24.0",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "3.2.4"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "prettier --write"
+    ]
+  },
+  "resolutions": {
+    "**/*/@amplitude/analytics-browser": "2.11.13",
+    "**/*/@reown/appkit": "1.7.8"
   }
 }
