@@ -53,8 +53,8 @@ export const useOrderlyConfig = (): OrderlyConfig => {
     () => ({
       scaffold: {
         mainNavProps: {
-          initialMenu: "/swap",
-          mainMenus: [{ name: "Swap", href: "/swap" }],
+          initialMenu: "/",
+          mainMenus: [{ name: "Swap", href: "/" }],
         },
         footerProps,
       },

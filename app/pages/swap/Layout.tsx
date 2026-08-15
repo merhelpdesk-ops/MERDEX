@@ -11,8 +11,8 @@ export default function SwapLayout() {
     <Scaffold
       mainNavProps={{
         ...config.scaffold.mainNavProps,
-        initialMenu: "/swap",
-        mainMenus: [{ name: "Swap", href: "/swap" }],
+        initialMenu: "/",
+        mainMenus: [{ name: "Swap", href: "/" }],
         campaigns: undefined,
         customRender: (components) => (
           <div className="oui-flex oui-w-full oui-items-center oui-justify-end oui-gap-3">

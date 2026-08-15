@@ -13,7 +13,6 @@ const STATIC_ROUTES = [
   "/portfolio/api-key",
   "/portfolio/setting",
   "/leaderboard",
-  "/swap",
   "/points",
 ];
 

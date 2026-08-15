@@ -12,7 +12,7 @@ export function useNav() {
         return;
       }
 
-      navigate(option.href === "/" ? "/swap" : option.href);
+      navigate(option.href);
     },
     [navigate],
   );

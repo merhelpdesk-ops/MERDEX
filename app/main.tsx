@@ -40,13 +40,11 @@ const router = createBrowserRouter(
       element: <App />,
       errorElement: <ErrorBoundary />,
       children: [
-        { index: true, element: <Navigate to="/swap" replace /> },
         {
-          path: "swap",
           element: <SwapLayout />,
           children: [{ index: true, element: <SwapIndex /> }],
         },
-        { path: "*", element: <Navigate to="/swap" replace /> },
+        { path: "*", element: <Navigate to="/" replace /> },
       ],
     },
   ],
