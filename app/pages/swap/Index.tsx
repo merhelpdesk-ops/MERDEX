@@ -32,7 +32,7 @@ export default function SwapIndex() {
           <button
             type="button"
             className="flex h-14 items-center justify-center gap-3 rounded-xl text-base text-white/60 transition-colors hover:bg-white/[0.05] hover:text-white"
-            onClick={() => window.location.assign("https://google.com")}
+            onClick={() => window.location.assign("https://mer-perps-global.vercel.app")}
           >
             <span className="h-3 w-3 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.85)]" />
             Perps
