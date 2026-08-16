@@ -16599,10 +16599,10 @@ winston@^3.11.0:
     triple-beam "^1.3.0"
     winston-transport "^4.9.0"
 
-woofi-swap-widget-kit@^0.0.43:
-  version "0.0.43"
-  resolved "https://registry.yarnpkg.com/woofi-swap-widget-kit/-/woofi-swap-widget-kit-0.0.43.tgz#4bc58a39486da75eacd226f31ab69be78d7bb230"
-  integrity sha512-vQbHBRAlGfEwU1vEuF2M6Qs35O2AFXR/zZ9ZCeutku+AojdJJ5AWSrZFMQaE2jUcYt69lCCJ0l/pa98eprNnxw==
+woofi-swap-widget-kit@^0.0.46:
+  version "0.0.46"
+  resolved "https://registry.yarnpkg.com/woofi-swap-widget-kit/-/woofi-swap-widget-kit-0.0.46.tgz#4822904d7f8d2497347867a469ab5627fc48e3e3"
+  integrity sha512-GkcdW283tFZLaRmardehAv/cpJY4cjlPmK2UqMJMAejxkpqD96aHfl+56q55GsTSjQUZKa0iBAIcmx4Y8efqHg==
   dependencies:
     "@amplitude/analytics-browser" "^2.11.9"
     "@coral-xyz/anchor" "0.29.0"
