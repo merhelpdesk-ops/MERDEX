@@ -130,7 +130,7 @@ export function getPageMeta(): (MetaTag | LinkTag)[] {
   let metaImage;
   if (siteUrl) {
     const baseUrl = siteUrl.endsWith("/") ? siteUrl.slice(0, -1) : siteUrl;
-    metaImage = `${baseUrl}/pnl/poster_bg_1.webp`;
+    metaImage = `${baseUrl}/merdex-social-card.png`;
   }
 
   const metaKeywords = config.keywords;
