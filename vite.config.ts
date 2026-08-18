@@ -56,7 +56,7 @@ export default defineConfig(() => {
         dependencies: ["bs58", "@coral-xyz/anchor", "lodash"],
       }),
       nodePolyfills({
-        include: ["buffer", "crypto", "http", "https", "stream", "util"],
+        include: ["buffer", "crypto", "stream"],
       }),
     ],
     build: {
