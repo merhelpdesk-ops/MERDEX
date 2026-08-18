@@ -141,7 +141,7 @@ const OrderlyProvider = (props: { children: ReactNode }) => {
     },
   );
 
-  const dataAdapter = createSymbolDataAdapter();
+  const dataAdapter = useMemo(() => createSymbolDataAdapter(), []);
 
   const onChainChanged = useCallback(
     (_chainId: number, { isTestnet }: { isTestnet: boolean }) => {

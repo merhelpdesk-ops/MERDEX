@@ -1,4 +1,4 @@
-import React, { lazy } from "react";
+import { lazy } from "react";
 import ReactDOM from "react-dom/client";
 import { HelmetProvider } from "react-helmet-async";
 import {
@@ -14,6 +14,28 @@ import "./styles/index.css";
 
 const SwapLayout = lazy(() => import("./pages/swap/Layout"));
 const SwapIndex = lazy(() => import("./pages/swap/Index"));
+
+async function removeLegacyServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+
+  try {
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(
+      registrations.map((registration) => registration.unregister()),
+    );
+
+    if ("caches" in window) {
+      const cacheNames = await caches.keys();
+      await Promise.all(
+        cacheNames
+          .filter((cacheName) => cacheName.endsWith("-dex-v1"))
+          .map((cacheName) => caches.delete(cacheName)),
+      );
+    }
+  } catch (error) {
+    console.warn("Failed to remove legacy service worker:", error);
+  }
+}
 
 async function loadRuntimeConfig() {
   return new Promise<void>((resolve) => {
@@ -52,26 +74,12 @@ const router = createBrowserRouter(
 );
 
 loadRuntimeConfig().then(() => {
+  void removeLegacyServiceWorker();
   void initializeAnalyticsFromRuntimeConfig();
 
   ReactDOM.createRoot(document.getElementById("root")!).render(
-    <React.StrictMode>
-      <HelmetProvider>
-        <RouterProvider router={router} />
-      </HelmetProvider>
-    </React.StrictMode>,
+    <HelmetProvider>
+      <RouterProvider router={router} />
+    </HelmetProvider>,
   );
 });
-
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker
-      .register(withBasePath("/sw.js"))
-      .then((registration) => {
-        console.log("SW registered:", registration);
-      })
-      .catch((error) => {
-        console.log("SW registration failed:", error);
-      });
-  });
-}
