@@ -84,6 +84,12 @@
   },
   "resolutions": {
     "**/*/@amplitude/analytics-browser": "2.11.13",
-    "**/*/@reown/appkit": "1.7.8"
+    "**/*/@reown/appkit": "1.7.8",
+    "**/@walletconnect/core": "2.21.1",
+    "**/@walletconnect/ethereum-provider": "2.21.1",
+    "**/@walletconnect/sign-client": "2.21.1",
+    "**/@walletconnect/types": "2.21.1",
+    "**/@walletconnect/universal-provider": "2.21.1",
+    "**/@walletconnect/utils": "2.21.1"
   }
 }
