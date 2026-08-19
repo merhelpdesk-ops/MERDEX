@@ -65,8 +65,10 @@ async function initializeGA4(
   config: Extract<AnalyticsConfigV1, { provider: "ga4" }>,
 ) {
   window.dataLayer = window.dataLayer || [];
-  window.gtag = (...args: unknown[]) => {
-    window.dataLayer?.push(args);
+  window.gtag = function gtag(..._args: unknown[]) {
+    // Google Tag expects each command to be the function's Arguments object.
+    // A regular array looks similar but is not processed as a gtag command.
+    window.dataLayer?.push(arguments);
   };
 
   const script = document.createElement("script");
