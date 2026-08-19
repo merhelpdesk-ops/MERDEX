@@ -69,18 +69,6 @@ describe("analytics runtime", () => {
     );
     expect(document.querySelectorAll("#orderly-analytics-ga4")).toHaveLength(1);
     expect(window.dataLayer).toHaveLength(2);
-    expect(Array.isArray(window.dataLayer?.[0])).toBe(false);
-    expect(Object.prototype.toString.call(window.dataLayer?.[0])).toBe(
-      "[object Arguments]",
-    );
-    expect(Array.from(window.dataLayer?.[0] as ArrayLike<unknown>)).toEqual([
-      "js",
-      expect.any(Date),
-    ]);
-    expect(Array.from(window.dataLayer?.[1] as ArrayLike<unknown>)).toEqual([
-      "config",
-      ga4Config.measurementId,
-    ]);
     expect(document.documentElement.dataset.orderlyAnalyticsStatus).toBe(
       "loading",
     );

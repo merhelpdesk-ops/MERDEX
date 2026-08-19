@@ -49,8 +49,3 @@
 .dex.is-widget .top-left {
   display: none !important;
 }
-
-/* Hide the FAQ tooltip icon beside the WooFi swap action details. */
-.dex .swap-wrap .action .list-right > img.faq {
-  display: none !important;
-}
