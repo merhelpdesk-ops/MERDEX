@@ -20,7 +20,8 @@ type CachedResult = {
 };
 
 const GUARDED_METHODS = new Set(["eth_accounts", "eth_chainId"]);
-const CACHE_DURATION_MS = 500;
+const GUARDED_EVENTS = new Set(["accountsChanged", "chainChanged"]);
+const CACHE_DURATION_MS = 2_000;
 
 const fingerprint = (value: unknown) => {
   try {
@@ -39,9 +40,18 @@ export function createStableEip1193Provider() {
   let activeProvider: Eip1193ProviderLike | undefined;
   let activeSession: string | undefined;
   let activeContext: string | undefined;
+  let providerGeneration = 0;
   const cachedResults = new Map<string, CachedResult>();
   const inFlightRequests = new Map<string, Promise<unknown>>();
   const eventListeners = new Map<string, Set<(...args: unknown[]) => void>>();
+  const listenerWrappers = new Map<
+    string,
+    Map<(...args: unknown[]) => void, (...args: unknown[]) => void>
+  >();
+  let lastListenerEvents = new WeakMap<
+    (...args: unknown[]) => void,
+    Map<string, string>
+  >();
 
   const invalidate = () => {
     for (const cached of cachedResults.values()) {
@@ -74,8 +84,11 @@ export function createStableEip1193Provider() {
     const pending = inFlightRequests.get(args.method);
     if (pending) return pending;
 
+    const requestGeneration = providerGeneration;
     const nextRequest = Promise.resolve(target.request.call(target, args))
       .then((result) => {
+        if (requestGeneration !== providerGeneration) return result;
+
         const nextFingerprint = fingerprint(result);
         const previous = cachedResults.get(args.method);
         const stableValue =
@@ -90,7 +103,9 @@ export function createStableEip1193Provider() {
         return stableValue;
       })
       .finally(() => {
-        inFlightRequests.delete(args.method);
+        if (inFlightRequests.get(args.method) === nextRequest) {
+          inFlightRequests.delete(args.method);
+        }
       });
 
     inFlightRequests.set(args.method, nextRequest);
@@ -101,7 +116,8 @@ export function createStableEip1193Provider() {
     if (!target || typeof target.removeListener !== "function") return;
     for (const [event, listeners] of eventListeners) {
       for (const listener of listeners) {
-        target.removeListener.call(target, event, listener);
+        const wrappedListener = listenerWrappers.get(event)?.get(listener);
+        target.removeListener.call(target, event, wrappedListener ?? listener);
       }
     }
   };
@@ -110,9 +126,35 @@ export function createStableEip1193Provider() {
     if (!target || typeof target.on !== "function") return;
     for (const [event, listeners] of eventListeners) {
       for (const listener of listeners) {
-        target.on.call(target, event, listener);
+        const wrappedListener = listenerWrappers.get(event)?.get(listener);
+        target.on.call(target, event, wrappedListener ?? listener);
       }
     }
+  };
+
+  const getListenerWrapper = (
+    event: string,
+    listener: (...args: unknown[]) => void,
+  ) => {
+    const eventWrappers = listenerWrappers.get(event) ?? new Map();
+    const existingWrapper = eventWrappers.get(listener);
+    if (existingWrapper) return existingWrapper;
+
+    const wrappedListener = (...args: unknown[]) => {
+      if (GUARDED_EVENTS.has(event)) {
+        const nextFingerprint = fingerprint(args);
+        const listenerEvents = lastListenerEvents.get(listener) ?? new Map();
+        if (listenerEvents.get(event) === nextFingerprint) return;
+        listenerEvents.set(event, nextFingerprint);
+        lastListenerEvents.set(listener, listenerEvents);
+        invalidate();
+      }
+
+      listener(...args);
+    };
+    eventWrappers.set(listener, wrappedListener);
+    listenerWrappers.set(event, eventWrappers);
+    return wrappedListener;
   };
 
   const on = (event: string, listener: (...args: unknown[]) => void) => {
@@ -121,7 +163,8 @@ export function createStableEip1193Provider() {
 
     listeners.add(listener);
     eventListeners.set(event, listeners);
-    activeProvider?.on?.call(activeProvider, event, listener);
+    const wrappedListener = getListenerWrapper(event, listener);
+    activeProvider?.on?.call(activeProvider, event, wrappedListener);
     return provider;
   };
 
@@ -130,7 +173,13 @@ export function createStableEip1193Provider() {
     listener: (...args: unknown[]) => void,
   ) => {
     eventListeners.get(event)?.delete(listener);
-    activeProvider?.removeListener?.call(activeProvider, event, listener);
+    const wrappedListener = listenerWrappers.get(event)?.get(listener);
+    listenerWrappers.get(event)?.delete(listener);
+    activeProvider?.removeListener?.call(
+      activeProvider,
+      event,
+      wrappedListener ?? listener,
+    );
     return provider;
   };
 
@@ -167,9 +216,11 @@ export function createStableEip1193Provider() {
     updateTarget(nextProvider: unknown, session: string | undefined) {
       if (!session) {
         detachListeners(activeProvider);
+        providerGeneration++;
         activeProvider = undefined;
         activeSession = undefined;
         activeContext = undefined;
+        lastListenerEvents = new WeakMap();
         cachedResults.clear();
         inFlightRequests.clear();
         return;
@@ -179,10 +230,12 @@ export function createStableEip1193Provider() {
       if (activeProvider && activeSession === session) return;
 
       detachListeners(activeProvider);
+      providerGeneration++;
       activeProvider = nextProvider as Eip1193ProviderLike;
       attachListeners(activeProvider);
       activeSession = session;
       activeContext = undefined;
+      lastListenerEvents = new WeakMap();
       cachedResults.clear();
       inFlightRequests.clear();
     },

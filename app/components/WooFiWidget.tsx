@@ -1,11 +1,12 @@
-import { useCallback, useRef } from "react";
-import { WooFiSwapWidgetReact } from "woofi-swap-widget-kit/react";
+import { useCallback, useLayoutEffect, useRef } from "react";
+import type { WidgetConfig } from "woofi-swap-widget-kit";
 import { useWalletConnector } from "@orderly.network/hooks";
 import { getRuntimeConfig } from "../utils/runtime-config";
 import {
   createStableEip1193Provider,
   type StableEip1193Provider,
 } from "../utils/stable-eip1193-provider";
+import { ControlledWooFiSwapWidget } from "./ControlledWooFiSwapWidget";
 import "../styles/woofi-widget.css";
 import "woofi-swap-widget-kit/style.css";
 
@@ -14,6 +15,14 @@ type Eip1193Provider = {
     method: string;
     params?: readonly unknown[];
   }) => Promise<unknown>;
+};
+
+const WOOFI_CONFIG: WidgetConfig = {
+  enableLinea: false,
+  enableMerlin: false,
+  enableHyperevm: false,
+  enableZksync: false,
+  initialLineChartVisible: false,
 };
 
 export default function WooFiWidget() {
@@ -32,8 +41,10 @@ export default function WooFiWidget() {
     ? `${walletAddress ?? "pending"}:${connectedChain?.id ?? "pending"}`
     : undefined;
   const stableProvider = stableProviderRef.current;
-  stableProvider.updateTarget(wallet?.provider, providerSession);
-  stableProvider.updateContext(providerContext);
+  useLayoutEffect(() => {
+    stableProvider.updateTarget(wallet?.provider, providerSession);
+    stableProvider.updateContext(providerContext);
+  }, [providerContext, providerSession, stableProvider, wallet?.provider]);
   const woofiProvider = wallet?.provider ? stableProvider.provider : undefined;
 
   const handleConnectWallet = useCallback(() => {
@@ -68,19 +79,13 @@ export default function WooFiWidget() {
   );
 
   return (
-    <WooFiSwapWidgetReact
+    <ControlledWooFiSwapWidget
       evmProvider={woofiProvider}
       currentChain={connectedChain?.id}
       onConnectWallet={handleConnectWallet}
       onChainSwitch={handleChainSwitch}
       brokerAddress={brokerAddress}
-      config={{
-        enableLinea: false,
-        enableMerlin: false,
-        enableHyperevm: false,
-        enableZksync: false,
-        initialLineChartVisible: false,
-      }}
+      config={WOOFI_CONFIG}
     />
   );
 }
