@@ -7,7 +7,6 @@ import {
   importLocaleJsonModule,
 } from "@orderly.network/i18n";
 import type { AsyncResources, LocaleJsonModule } from "@orderly.network/i18n";
-import { getRuntimeConfigArray } from "@/utils/runtime-config";
 import extendEnLocale from "../../locales/en.json";
 
 const baseLoaders = import.meta.glob<LocaleJsonModule>(
@@ -37,36 +36,10 @@ const resources: AsyncResources = async (lang) => {
   return { ...base, ...extend };
 };
 
-const getAvailableLanguages = (): string[] => {
-  const languages = getRuntimeConfigArray("VITE_AVAILABLE_LANGUAGES");
-
-  return languages.length > 0 ? languages : ["en"];
-};
-
-const getDefaultLanguage = (): LocaleCode => {
-  const availableLanguages = getAvailableLanguages();
-
-  if (typeof window !== "undefined") {
-    const urlParams = new URLSearchParams(window.location.search);
-    const langParam = urlParams.get("lang");
-    if (langParam && availableLanguages.includes(langParam)) {
-      return langParam as LocaleCode;
-    }
-  }
-
-  if (availableLanguages.includes(LocaleEnum.en)) return LocaleEnum.en;
-
-  return (availableLanguages[0] || LocaleEnum.en) as LocaleCode;
-};
-
-const onLanguageChanged = async (lang: LocaleCode) => {
+const onLanguageChanged = async () => {
   if (typeof window !== "undefined") {
     const url = new URL(window.location.href);
-    if (lang === LocaleEnum.en) {
-      url.searchParams.delete("lang");
-    } else {
-      url.searchParams.set("lang", lang);
-    }
+    url.searchParams.delete("lang");
     window.history.replaceState({}, "", url.toString());
   }
 };
@@ -76,16 +49,14 @@ type OrderlyLocaleProviderProps = {
 };
 
 export const OrderlyLocaleProvider = (props: OrderlyLocaleProviderProps) => {
-  const defaultLanguage = getDefaultLanguage();
-  const availableLanguages = getAvailableLanguages();
   const filteredLanguages = defaultLanguages.filter((lang) =>
-    availableLanguages.includes(lang.localCode),
+    lang.localCode === LocaleEnum.en,
   );
 
   return (
     <LocaleProvider
       resources={resources}
-      locale={defaultLanguage}
+      locale={LocaleEnum.en}
       languages={filteredLanguages}
       onLanguageChanged={onLanguageChanged}
     >
