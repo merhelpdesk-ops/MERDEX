@@ -8,7 +8,6 @@ import {
 } from "@orderly.network/i18n";
 import type { AsyncResources, LocaleJsonModule } from "@orderly.network/i18n";
 import { getRuntimeConfigArray } from "@/utils/runtime-config";
-import { getSEOConfig, getUserLanguage } from "@/utils/seo";
 import extendEnLocale from "../../locales/en.json";
 
 const baseLoaders = import.meta.glob<LocaleJsonModule>(
@@ -45,8 +44,6 @@ const getAvailableLanguages = (): string[] => {
 };
 
 const getDefaultLanguage = (): LocaleCode => {
-  const seoConfig = getSEOConfig();
-  const userLanguage = getUserLanguage();
   const availableLanguages = getAvailableLanguages();
 
   if (typeof window !== "undefined") {
@@ -57,15 +54,9 @@ const getDefaultLanguage = (): LocaleCode => {
     }
   }
 
-  if (seoConfig.language && availableLanguages.includes(seoConfig.language)) {
-    return seoConfig.language as LocaleCode;
-  }
+  if (availableLanguages.includes(LocaleEnum.en)) return LocaleEnum.en;
 
-  if (availableLanguages.includes(userLanguage)) {
-    return userLanguage as LocaleCode;
-  }
-
-  return (availableLanguages[0] || "en") as LocaleCode;
+  return (availableLanguages[0] || LocaleEnum.en) as LocaleCode;
 };
 
 const onLanguageChanged = async (lang: LocaleCode) => {
