@@ -6,6 +6,12 @@ import {
   Navigate,
   RouterProvider,
 } from "react-router-dom";
+import {
+  LocaleEnum,
+  i18n,
+  i18nCookieKey,
+  i18nLocalStorageKey,
+} from "@orderly.network/i18n";
 import App from "./App";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { initializeAnalyticsFromRuntimeConfig } from "./utils/analytics";
@@ -14,6 +20,24 @@ import "./styles/index.css";
 
 const SwapLayout = lazy(() => import("./pages/swap/Layout"));
 const SwapIndex = lazy(() => import("./pages/swap/Index"));
+
+async function forceEnglishLocale() {
+  try {
+    localStorage.setItem(i18nLocalStorageKey, LocaleEnum.en);
+  } catch {
+    // Some privacy modes disable persistent storage; the active locale is still forced below.
+  }
+
+  document.cookie = `${i18nCookieKey}=${LocaleEnum.en}; path=/; SameSite=Lax`;
+  document.documentElement.lang = LocaleEnum.en;
+
+  const url = new URL(window.location.href);
+  url.searchParams.delete("lang");
+  url.searchParams.delete("lng");
+  window.history.replaceState({}, "", url.toString());
+
+  await i18n.changeLanguage(LocaleEnum.en);
+}
 
 async function removeLegacyServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
@@ -53,27 +77,27 @@ async function loadRuntimeConfig() {
   });
 }
 
-const basePath = import.meta.env.BASE_URL || "/";
+loadRuntimeConfig().then(async () => {
+  await forceEnglishLocale();
 
-const router = createBrowserRouter(
-  [
-    {
-      path: "/",
-      element: <App />,
-      errorElement: <ErrorBoundary />,
-      children: [
-        {
-          element: <SwapLayout />,
-          children: [{ index: true, element: <SwapIndex /> }],
-        },
-        { path: "*", element: <Navigate to="/" replace /> },
-      ],
-    },
-  ],
-  { basename: basePath },
-);
+  const router = createBrowserRouter(
+    [
+      {
+        path: "/",
+        element: <App />,
+        errorElement: <ErrorBoundary />,
+        children: [
+          {
+            element: <SwapLayout />,
+            children: [{ index: true, element: <SwapIndex /> }],
+          },
+          { path: "*", element: <Navigate to="/" replace /> },
+        ],
+      },
+    ],
+    { basename: import.meta.env.BASE_URL || "/" },
+  );
 
-loadRuntimeConfig().then(() => {
   void removeLegacyServiceWorker();
   void initializeAnalyticsFromRuntimeConfig();
 
