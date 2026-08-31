@@ -48,7 +48,7 @@ export default function SwapIndex() {
         {/* 底部 Bybit 广告横幅 */}
         <div className="mt-12 flex w-full max-w-[1000px] justify-center px-2">
           <a
-            href="你的Bybit注册或邀请链接"
+            href="https://partner.bybit.com/b/165473"
             target="_blank"
             rel="noopener noreferrer"
             className="w-full transition-transform hover:scale-[1.01]"
