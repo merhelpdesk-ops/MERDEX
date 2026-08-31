@@ -44,6 +44,22 @@ export default function SwapIndex() {
             <WooFiWidget />
           </Suspense>
         </div>
+
+        {/* 底部 Bybit 广告横幅 */}
+        <div className="mt-12 flex w-full max-w-[1000px] justify-center px-2">
+          <a
+            href="你的Bybit注册或邀请链接"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full transition-transform hover:scale-[1.01]"
+          >
+            <img
+              src="/bybit-banner.JPG"
+              alt="Bybit Promotion"
+              className="w-full rounded-xl border border-white/10 object-cover shadow-lg"
+            />
+          </a>
+        </div>
       </div>
     </>
   );
