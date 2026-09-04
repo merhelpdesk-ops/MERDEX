@@ -56,6 +56,13 @@
       }
 
       @media (max-width: 1000px) {
+        /* 在移动端通过 CSS 提前强制隐藏官方的 iframe 控件，防止加载瞬间闪烁 */
+        iframe[title*="chat" i],
+        iframe[src*="tawk.to"],
+        div[id^="tawk-"] {
+          display: none !important;
+        }
+
         #mobile-tawk-widget.is-visible {
           align-items: center;
           background: #1595ad;
@@ -153,7 +160,13 @@
         Tawk_API.maximize();
       }
 
-      Tawk_API.onLoad = syncMobileTawkWidget;
+      Tawk_API.onLoad = function() {
+        if (isMobileTawkScreen()) {
+          Tawk_API.hideWidget();
+        }
+        syncMobileTawkWidget();
+      };
+      
       Tawk_API.onChatMaximized = function () { showMobileTawkWidget(false); };
       Tawk_API.onChatMinimized = function () {
         if (isMobileTawkScreen()) {
