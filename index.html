@@ -56,11 +56,8 @@
       }
 
       @media (max-width: 1000px) {
-        /* 使用属性通配选择器，彻底强行隐蔽默认的浮窗和未展开前的对话框容器 */
-        div[class*="tawk-min-container"],
-        iframe[title*="chat" i]:not(.tawk-max-chat),
-        iframe[title*="tawk" i]:not(.tawk-max-chat),
-        div[id*="tawk-"]:not(.tawk-maximized) {
+        /* 1. 默认在移动端盲隐所有 tawk 生成的 iframe 节点，杜绝任何加载瞬间的闪烁 */
+        body:not(.tawk-active) iframe {
           display: none !important;
           visibility: hidden !important;
           opacity: 0 !important;
@@ -143,15 +140,18 @@
       function syncMobileTawkWidget() {
         if (typeof Tawk_API.showWidget !== 'function') return;
         if (!isMobileTawkScreen()) {
+          document.body.classList.add('tawk-active');
           showMobileTawkWidget(false);
           Tawk_API.showWidget();
           return;
         }
         var maximized = typeof Tawk_API.isChatMaximized === 'function' && Tawk_API.isChatMaximized();
         if (maximized) {
+          document.body.classList.add('tawk-active');
           showMobileTawkWidget(false);
           Tawk_API.showWidget();
         } else {
+          document.body.classList.remove('tawk-active');
           Tawk_API.hideWidget();
           showMobileTawkWidget(true);
           restoreMobileTawkPosition();
@@ -159,30 +159,36 @@
       }
 
       function openMobileTawkChat() {
+        document.body.classList.add('tawk-active');
         showMobileTawkWidget(false);
         Tawk_API.showWidget();
         Tawk_API.maximize();
       }
 
-      // 初始化参数设置：加载前置隐藏指令
-      Tawk_API.autoStart = true;
       Tawk_API.onLoad = function () {
         if (isMobileTawkScreen()) {
           Tawk_API.hideWidget();
         }
         syncMobileTawkWidget();
       };
-      
-      Tawk_API.onChatMaximized = function () { showMobileTawkWidget(false); };
+
+      Tawk_API.onChatMaximized = function () {
+        document.body.classList.add('tawk-active');
+        showMobileTawkWidget(false);
+      };
+
       Tawk_API.onChatMinimized = function () {
         if (isMobileTawkScreen()) {
+          document.body.classList.remove('tawk-active');
           Tawk_API.hideWidget();
           showMobileTawkWidget(true);
           restoreMobileTawkPosition();
         }
       };
+
       Tawk_API.onChatHidden = function () {
         if (isMobileTawkScreen()) {
+          document.body.classList.remove('tawk-active');
           showMobileTawkWidget(true);
           restoreMobileTawkPosition();
         }
