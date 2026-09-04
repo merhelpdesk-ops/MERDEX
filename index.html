@@ -56,11 +56,15 @@
       }
 
       @media (max-width: 1000px) {
-        /* 1. 默认在移动端盲隐所有 tawk 生成的 iframe 节点，杜绝任何加载瞬间的闪烁 */
-        body:not(.tawk-active) iframe {
+        /* 核心修补：直接在 CSS 层面拦截 tawk.to 的挂载根节点与所有 iframe */
+        /* 未打开聊天框时，禁止展示任何 tawk.to 相关的元素，从根本上杜绝加载第一秒的闪烁 */
+        body:not(.tawk-chat-open) [class*="widget-visible"],
+        body:not(.tawk-chat-open) [id*="tawk"],
+        body:not(.tawk-chat-open) iframe[title*="chat" i],
+        body:not(.tawk-chat-open) iframe[title*="tawk" i] {
           display: none !important;
-          visibility: hidden !important;
           opacity: 0 !important;
+          visibility: hidden !important;
           pointer-events: none !important;
         }
 
@@ -140,18 +144,18 @@
       function syncMobileTawkWidget() {
         if (typeof Tawk_API.showWidget !== 'function') return;
         if (!isMobileTawkScreen()) {
-          document.body.classList.add('tawk-active');
+          document.body.classList.add('tawk-chat-open');
           showMobileTawkWidget(false);
           Tawk_API.showWidget();
           return;
         }
         var maximized = typeof Tawk_API.isChatMaximized === 'function' && Tawk_API.isChatMaximized();
         if (maximized) {
-          document.body.classList.add('tawk-active');
+          document.body.classList.add('tawk-chat-open');
           showMobileTawkWidget(false);
           Tawk_API.showWidget();
         } else {
-          document.body.classList.remove('tawk-active');
+          document.body.classList.remove('tawk-chat-open');
           Tawk_API.hideWidget();
           showMobileTawkWidget(true);
           restoreMobileTawkPosition();
@@ -159,7 +163,7 @@
       }
 
       function openMobileTawkChat() {
-        document.body.classList.add('tawk-active');
+        document.body.classList.add('tawk-chat-open');
         showMobileTawkWidget(false);
         Tawk_API.showWidget();
         Tawk_API.maximize();
@@ -173,13 +177,13 @@
       };
 
       Tawk_API.onChatMaximized = function () {
-        document.body.classList.add('tawk-active');
+        document.body.classList.add('tawk-chat-open');
         showMobileTawkWidget(false);
       };
 
       Tawk_API.onChatMinimized = function () {
         if (isMobileTawkScreen()) {
-          document.body.classList.remove('tawk-active');
+          document.body.classList.remove('tawk-chat-open');
           Tawk_API.hideWidget();
           showMobileTawkWidget(true);
           restoreMobileTawkPosition();
@@ -188,7 +192,7 @@
 
       Tawk_API.onChatHidden = function () {
         if (isMobileTawkScreen()) {
-          document.body.classList.remove('tawk-active');
+          document.body.classList.remove('tawk-chat-open');
           showMobileTawkWidget(true);
           restoreMobileTawkPosition();
         }
