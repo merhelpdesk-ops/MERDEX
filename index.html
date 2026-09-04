@@ -56,11 +56,15 @@
       }
 
       @media (max-width: 1000px) {
-        /* 在移动端通过 CSS 提前强制隐藏官方的 iframe 控件，防止加载瞬间闪烁 */
-        iframe[title*="chat" i],
-        iframe[src*="tawk.to"],
-        div[id^="tawk-"] {
+        /* 使用属性通配选择器，彻底强行隐蔽默认的浮窗和未展开前的对话框容器 */
+        div[class*="tawk-min-container"],
+        iframe[title*="chat" i]:not(.tawk-max-chat),
+        iframe[title*="tawk" i]:not(.tawk-max-chat),
+        div[id*="tawk-"]:not(.tawk-maximized) {
           display: none !important;
+          visibility: hidden !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
         }
 
         #mobile-tawk-widget.is-visible {
@@ -160,7 +164,9 @@
         Tawk_API.maximize();
       }
 
-      Tawk_API.onLoad = function() {
+      // 初始化参数设置：加载前置隐藏指令
+      Tawk_API.autoStart = true;
+      Tawk_API.onLoad = function () {
         if (isMobileTawkScreen()) {
           Tawk_API.hideWidget();
         }
