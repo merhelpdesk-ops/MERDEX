@@ -67,13 +67,20 @@
         height: 52px;
         padding: 0 16px;
         box-sizing: border-box;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+
+      .merdex-nav-header::-webkit-scrollbar {
+        display: none; /* 隐去移动端滚动条 */
       }
 
       .merdex-logo-container {
         display: flex;
         align-items: center;
-        margin-right: 20px;
+        margin-right: 18px;
         text-decoration: none;
+        flex-shrink: 0;
       }
 
       .merdex-logo-text {
@@ -98,7 +105,7 @@
       .merdex-nav-links {
         display: flex;
         align-items: center;
-        gap: 20px;
+        gap: 16px;
         list-style: none;
         margin: 0;
         padding: 0;
@@ -111,10 +118,23 @@
         font-weight: 500;
         padding: 14px 0;
         transition: color 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
       }
 
-      .merdex-nav-item a:hover {
+      .merdex-nav-item a:hover,
+      .merdex-nav-item.active a {
         color: #ffffff;
+      }
+
+      /* 点亮状态的小绿点样式 */
+      .green-dot {
+        width: 6px;
+        height: 6px;
+        background-color: #10b981;
+        border-radius: 50%;
+        display: inline-block;
       }
 
       /* Tawk.to 客服挂件 */
@@ -345,7 +365,7 @@
     <!-- End of Tawk.to Script -->
   </head>
   <body>
-    <!-- 顶部导航栏 -->
+    <!-- 顶部导航栏 (包含 Swap, Perps, MER VIP, Service) -->
     <header class="merdex-nav-header">
       <a href="https://mer.finance/" class="merdex-logo-container">
         <span class="merdex-logo-text">
@@ -353,6 +373,14 @@
         </span>
       </a>
       <ul class="merdex-nav-links">
+        <li class="merdex-nav-item active">
+          <a href="/">Swap</a>
+        </li>
+        <li class="merdex-nav-item">
+          <a href="https://perp.mer.finance" target="_blank" rel="noopener noreferrer">
+            <span class="green-dot"></span> Perps
+          </a>
+        </li>
         <li class="merdex-nav-item">
           <a href="https://vip.mer.finance" target="_blank" rel="noopener noreferrer">MER VIP</a>
         </li>
