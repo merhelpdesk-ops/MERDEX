@@ -142,13 +142,17 @@
         display: none;
       }
 
-      /* 修正：精准隐藏小气泡图标，但在展开聊天窗口时保留聊天界面正常显示 */
-      .tawk-mobile-native-hidden iframe[src*="tawk.to"][style*="max-width:124px"],
-      .tawk-mobile-native-hidden iframe[src="about:blank"][style*="max-width:124px"] {
-        transform: translateX(200vw) !important;
-        -webkit-transform: translateX(200vw) !important;
+      /* 核心修改：全局永久封杀 Tawk.to 原生悬浮小气泡/小按钮，只允许展开后的全屏聊天框显示 */
+      iframe[src*="tawk.to"][style*="max-width:124px"],
+      iframe[src*="tawk.to"][style*="width: 124px"],
+      iframe[src*="tawk.to"][style*="width: 60px"],
+      iframe[src*="tawk.to"][style*="height: 60px"],
+      iframe[src="about:blank"][style*="max-width:124px"] {
+        display: none !important;
         visibility: hidden !important;
         opacity: 0 !important;
+        pointer-events: none !important;
+        transform: translateX(-9999px) !important;
       }
 
       #mobile-tawk-widget.is-visible {
@@ -215,7 +219,6 @@
       var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
       var mobileTawkPositionKey = 'merdex-mobile-tawk-position';
       Tawk_API.autoStart = false;
-      document.documentElement.classList.add('tawk-mobile-native-hidden');
 
       function isMobileTawkScreen() {
         return true;
@@ -228,13 +231,6 @@
       function showMobileTawkWidget(visible) {
         var widget = getMobileTawkWidget();
         if (widget) widget.classList.toggle('is-visible', visible && isMobileTawkScreen());
-      }
-
-      function hideNativeMobileTawkWidget(hidden) {
-        document.documentElement.classList.toggle(
-          'tawk-mobile-native-hidden',
-          hidden && isMobileTawkScreen()
-        );
       }
 
       function clampMobileTawkWidget() {
@@ -267,54 +263,39 @@
       function syncMobileTawkWidget() {
         if (typeof Tawk_API.showWidget !== 'function') return;
         if (!isMobileTawkScreen()) {
-          hideNativeMobileTawkWidget(false);
           showMobileTawkWidget(false);
           if (typeof Tawk_API.start === 'function') Tawk_API.start({ showWidget: true });
-          Tawk_API.showWidget();
           return;
         }
         var maximized = typeof Tawk_API.isChatMaximized === 'function' && Tawk_API.isChatMaximized();
         if (maximized) {
-          hideNativeMobileTawkWidget(false);
           showMobileTawkWidget(false);
         } else {
-          hideNativeMobileTawkWidget(true);
-          Tawk_API.hideWidget();
           showMobileTawkWidget(true);
           restoreMobileTawkPosition();
         }
       }
 
-      // 关键修正：点击时直接弹出最大化窗口，不再先显示原生图标，杜绝闪烁问题
+      // 点击直接调用 maximize 展开大面板，原生小图标被 CSS 强行不渲染
       function openMobileTawkChat() {
         if (typeof Tawk_API.maximize !== 'function') return;
         showMobileTawkWidget(false);
         if (typeof Tawk_API.start === 'function') Tawk_API.start({ showWidget: true });
-        
         Tawk_API.maximize();
-        
-        // 延迟移除隐藏类，确保弹窗完全渲染展开后再解除对原生组件的屏蔽
-        setTimeout(function() {
-          hideNativeMobileTawkWidget(false);
-        }, 150);
       }
 
       Tawk_API.onLoad = syncMobileTawkWidget;
       Tawk_API.onChatMaximized = function () {
-        hideNativeMobileTawkWidget(false);
         showMobileTawkWidget(false);
       };
       Tawk_API.onChatMinimized = function () {
         if (isMobileTawkScreen()) {
-          hideNativeMobileTawkWidget(true);
-          Tawk_API.hideWidget();
           showMobileTawkWidget(true);
           restoreMobileTawkPosition();
         }
       };
       Tawk_API.onChatHidden = function () {
         if (isMobileTawkScreen()) {
-          hideNativeMobileTawkWidget(true);
           showMobileTawkWidget(true);
           restoreMobileTawkPosition();
         }
