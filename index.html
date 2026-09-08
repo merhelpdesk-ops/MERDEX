@@ -142,17 +142,18 @@
         display: none;
       }
 
-      /* 核心修改：全局永久封杀 Tawk.to 原生悬浮小气泡/小按钮，只允许展开后的全屏聊天框显示 */
-      iframe[src*="tawk.to"][style*="max-width:124px"],
-      iframe[src*="tawk.to"][style*="width: 124px"],
-      iframe[src*="tawk.to"][style*="width: 60px"],
-      iframe[src*="tawk.to"][style*="height: 60px"],
-      iframe[src="about:blank"][style*="max-width:124px"] {
+      /* 核心修改：通过通配属性，精准硬封杀所有 Tawk.to 原生悬浮小图标/气泡，仅保留展开后高100%的全屏聊天框 */
+      iframe[src*="tawk.to"]:not([style*="height: 100%"]):not([style*="height:100%"]),
+      iframe[src="about:blank"]:not([style*="height: 100%"]):not([style*="height:100%"]) {
         display: none !important;
         visibility: hidden !important;
         opacity: 0 !important;
         pointer-events: none !important;
-        transform: translateX(-9999px) !important;
+        position: absolute !important;
+        left: -9999px !important;
+        top: -9999px !important;
+        width: 0 !important;
+        height: 0 !important;
       }
 
       #mobile-tawk-widget.is-visible {
@@ -189,23 +190,34 @@
       }
     </style>
 
-    <!-- 专门针对目标“Swap / Perps”切换栏的精准隐藏脚本 -->
+    <!-- 专门针对目标“Swap / Perps”切换栏及 Tawk 原生小图标的无死角拦截脚本 -->
     <script>
       (function hideSpecificTabs() {
         const observer = new MutationObserver(() => {
+          // 逻辑 1：隐藏 Swap / Perps 卡片容器
           const root = document.getElementById('root');
-          if (!root) return;
-
-          // 遍历查找包含 Swap 和 Perps 文字的特定按钮节点
-          const elements = root.querySelectorAll('button, div');
-          elements.forEach(el => {
-            const txt = (el.innerText || '').trim();
-            // 匹配纯文本恰好是 Swap 或 Perps 的切换元素，隐藏其父级卡片容器
-            if ((txt === 'Swap' || txt === 'Perps') && el.children.length === 0) {
-              let parent = el.parentElement;
-              if (parent && parent.innerText.includes('Swap') && parent.innerText.includes('Perps') && !parent.innerText.includes('Connect')) {
-                parent.style.display = 'none';
+          if (root) {
+            const elements = root.querySelectorAll('button, div');
+            elements.forEach(el => {
+              const txt = (el.innerText || '').trim();
+              if ((txt === 'Swap' || txt === 'Perps') && el.children.length === 0) {
+                let parent = el.parentElement;
+                if (parent && parent.innerText.includes('Swap') && parent.innerText.includes('Perps') && !parent.innerText.includes('Connect')) {
+                  parent.style.display = 'none';
+                }
               }
+            });
+          }
+
+          // 逻辑 2：实时监测并拔除 Tawk 原生小图标 iframe，防止初次插入 DOM 时的毫秒级闪烁
+          const tawkIframes = document.querySelectorAll('iframe[src*="tawk.to"], iframe[src="about:blank"]');
+          tawkIframes.forEach(iframe => {
+            const height = iframe.style.height || '';
+            if (!height.includes('100%')) {
+              iframe.style.setProperty('display', 'none', 'important');
+              iframe.style.setProperty('opacity', '0', 'important');
+              iframe.style.setProperty('visibility', 'hidden', 'important');
+              iframe.style.setProperty('left', '-9999px', 'important');
             }
           });
         });
@@ -261,10 +273,8 @@
       }
 
       function syncMobileTawkWidget() {
-        if (typeof Tawk_API.showWidget !== 'function') return;
         if (!isMobileTawkScreen()) {
           showMobileTawkWidget(false);
-          if (typeof Tawk_API.start === 'function') Tawk_API.start({ showWidget: true });
           return;
         }
         var maximized = typeof Tawk_API.isChatMaximized === 'function' && Tawk_API.isChatMaximized();
@@ -276,7 +286,6 @@
         }
       }
 
-      // 点击直接调用 maximize 展开大面板，原生小图标被 CSS 强行不渲染
       function openMobileTawkChat() {
         if (typeof Tawk_API.maximize !== 'function') return;
         showMobileTawkWidget(false);
