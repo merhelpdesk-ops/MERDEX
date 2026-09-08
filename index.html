@@ -136,7 +136,7 @@
         display: inline-block;
       }
 
-      /* 自定义客服拖拽按钮 */
+      /* 自定义客服按钮 */
       #mobile-tawk-widget {
         display: none;
       }
@@ -174,32 +174,21 @@
         }
       }
 
-      /* ------------------------------------------------------------- */
-      /* 核心解决：全局死封 Tawk 原生小圆球/小气泡的所有容器 DOM */
-      /* ------------------------------------------------------------- */
-      #tawk-bubble-container,
-      .tawk-min-container,
-      .tawk-button-circle,
-      div[class*="tawk-widget"],
-      div[id*="tawk-bubble"] {
+      /* ======================================================= */
+      /* 核心物理隐藏：只把非自定义按钮的原生 Tawk 节点全部不展示 */
+      /* ======================================================= */
+      body > div[class*="tawk"]:not(#mobile-tawk-widget),
+      body > iframe[src*="tawk.to"]:not([style*="height: 100%"]):not([style*="height:100%"]),
+      div[id*="tawk-bubble"],
+      .tawk-min-container {
         display: none !important;
+        opacity: 0 !important;
         visibility: hidden !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-        width: 0 !important;
-        height: 0 !important;
-      }
-
-      /* 针对尺寸不是全屏/展开框的所有窗口强行隐形 */
-      iframe[title*="chat"]:not([style*="height: 100%"]):not([style*="height:100%"]),
-      iframe[src*="tawk.to"]:not([style*="height: 100%"]):not([style*="height:100%"]) {
-        display: none !important;
-        opacity: 0 !important;
         pointer-events: none !important;
       }
     </style>
 
-    <!-- 隐藏特定 Swap/Perps 按钮的脚本 -->
+    <!-- 隐藏特定 Swap/Perps 卡片 -->
     <script>
       (function hideSpecificTabs() {
         const observer = new MutationObserver(() => {
@@ -224,10 +213,6 @@
     <script type="text/javascript">
       var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
       var mobileTawkPositionKey = 'merdex-mobile-tawk-position';
-
-      // 关键改动 1：官方 API，从根源禁用原生 Widget 渲染
-      Tawk_API.autoStart = false; 
-      Tawk_API.hideWidget = true; 
 
       function isMobileTawkScreen() {
         return true;
@@ -279,47 +264,21 @@
         }
       }
 
-      // 关键改动 2：点击自定义图标时，只调用 maximize，绝对不传入 showWidget: true
       function openMobileTawkChat() {
         if (typeof Tawk_API.maximize !== 'function') return;
         showMobileTawkWidget(false);
-        
-        // 如果 API 没初始化成功，先异步启动，但强制关闭 Widget 展示
-        if (typeof Tawk_API.start === 'function') {
-          Tawk_API.start({ showWidget: false });
-        }
-        
-        // 强行隐藏原生小控件并展开大窗口
-        if (typeof Tawk_API.hideWidget === 'function') {
-          Tawk_API.hideWidget();
-        }
         Tawk_API.maximize();
       }
 
-      Tawk_API.onLoad = function() {
-        // 加载完成后立刻隐藏原生挂件
-        if (typeof Tawk_API.hideWidget === 'function') {
-          Tawk_API.hideWidget();
-        }
-        syncMobileTawkWidget();
-      };
-
+      Tawk_API.onLoad = syncMobileTawkWidget;
       Tawk_API.onChatMaximized = function () {
         showMobileTawkWidget(false);
       };
-
       Tawk_API.onChatMinimized = function () {
-        if (typeof Tawk_API.hideWidget === 'function') {
-          Tawk_API.hideWidget();
-        }
         showMobileTawkWidget(true);
         restoreMobileTawkPosition();
       };
-
       Tawk_API.onChatHidden = function () {
-        if (typeof Tawk_API.hideWidget === 'function') {
-          Tawk_API.hideWidget();
-        }
         showMobileTawkWidget(true);
         restoreMobileTawkPosition();
       };
@@ -429,7 +388,7 @@
 
     <div id="root"></div>
 
-    <!-- 自定义可拖拽的客服按钮 -->
+    <!-- 自定义客服拖拽按钮 -->
     <button id="mobile-tawk-widget" type="button" aria-label="Chat widget" title="Chat widget"
       class="tawk-custom-color tawk-custom-border-color tawk-outline tawk-button tawk-button-circle tawk-button-large">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" height="32" width="32" role="img"
