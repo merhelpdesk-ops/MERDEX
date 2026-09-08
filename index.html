@@ -72,7 +72,7 @@
       }
 
       .merdex-nav-header::-webkit-scrollbar {
-        display: none; /* 隐去移动端滚动条 */
+        display: none;
       }
 
       .merdex-logo-container {
@@ -128,13 +128,24 @@
         color: #ffffff;
       }
 
-      /* 点亮状态的小绿点样式 */
       .green-dot {
         width: 6px;
         height: 6px;
         background-color: #10b981;
         border-radius: 50%;
         display: inline-block;
+      }
+
+      /* 隐藏页面内部原来的 Swap / Perps 切换区域 */
+      #root [class*="tab"],
+      #root [class*="Tab"],
+      #root [class*="switch"],
+      #root [class*="Switch"],
+      #root [class*="toggle"],
+      #root [class*="Toggle"],
+      #root [class*="navigation"],
+      #root [class*="Navigation"] {
+        display: none !important;
       }
 
       /* Tawk.to 客服挂件 */
@@ -365,7 +376,7 @@
     <!-- End of Tawk.to Script -->
   </head>
   <body>
-    <!-- 顶部导航栏 (包含 Swap, Perps, MER VIP, Service) -->
+    <!-- 顶部导航栏 -->
     <header class="merdex-nav-header">
       <a href="https://mer.finance/" class="merdex-logo-container">
         <span class="merdex-logo-text">
