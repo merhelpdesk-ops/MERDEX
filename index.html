@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="tawk-mobile-native-hidden">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/webp" href="/favicon.webp" />
@@ -136,14 +136,9 @@
         display: inline-block;
       }
 
-      /* 自定义客服按钮与遮罩样式 */
+      /* 自定义客服拖拽按钮样式 */
       #mobile-tawk-widget {
         display: none;
-      }
-
-      .tawk-mobile-native-hidden iframe[src="about:blank"][referrerpolicy="no-referrer-when-downgrade"][style*="max-width:124px"] {
-        transform: translateX(200vw) !important;
-        -webkit-transform: translateX(200vw) !important;
       }
 
       #mobile-tawk-widget.is-visible {
@@ -178,17 +173,6 @@
           right: 20px;
         }
       }
-
-      /* 隐藏原生 Tawk.to 挂件 */
-      body > div[class*="tawk"]:not(#mobile-tawk-widget),
-      body > iframe[src*="tawk.to"]:not([style*="height: 100%"]):not([style*="height:100%"]),
-      div[id*="tawk-bubble"],
-      .tawk-min-container {
-        display: none !important;
-        opacity: 0 !important;
-        visibility: hidden !important;
-        pointer-events: none !important;
-      }
     </style>
 
     <!-- 隐藏特定 Swap/Perps 卡片 -->
@@ -217,7 +201,6 @@
       var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
       Tawk_API.lang = 'en';
       var mobileTawkPositionKey = 'merdex-mobile-tawk-position';
-      Tawk_API.autoStart = false;
 
       function isMobileTawkScreen() {
         return true;
@@ -230,13 +213,6 @@
       function showMobileTawkWidget(visible) {
         var widget = getMobileTawkWidget();
         if (widget) widget.classList.toggle('is-visible', visible && isMobileTawkScreen());
-      }
-
-      function hideNativeMobileTawkWidget(hidden) {
-        document.documentElement.classList.toggle(
-          'tawk-mobile-native-hidden',
-          hidden && isMobileTawkScreen()
-        );
       }
 
       function clampMobileTawkWidget() {
@@ -267,22 +243,10 @@
       }
 
       function syncMobileTawkWidget() {
-        if (typeof Tawk_API.showWidget !== 'function') return;
-        if (!isMobileTawkScreen()) {
-          hideNativeMobileTawkWidget(false);
-          showMobileTawkWidget(false);
-          if (typeof Tawk_API.start === 'function') Tawk_API.start({ showWidget: true });
-          Tawk_API.showWidget();
-          return;
-        }
         var maximized = typeof Tawk_API.isChatMaximized === 'function' && Tawk_API.isChatMaximized();
         if (maximized) {
-          hideNativeMobileTawkWidget(false);
           showMobileTawkWidget(false);
-          Tawk_API.showWidget();
         } else {
-          hideNativeMobileTawkWidget(true);
-          Tawk_API.hideWidget();
           showMobileTawkWidget(true);
           restoreMobileTawkPosition();
         }
@@ -290,35 +254,20 @@
 
       function openMobileTawkChat() {
         showMobileTawkWidget(false);
-        hideNativeMobileTawkWidget(false);
-        if (typeof Tawk_API.start === 'function') Tawk_API.start({ showWidget: true });
-        if (typeof Tawk_API.showWidget === 'function') Tawk_API.showWidget();
         if (typeof Tawk_API.maximize === 'function') Tawk_API.maximize();
-      }
-
-      function openTawkChat() {
-        openMobileTawkChat();
       }
 
       Tawk_API.onLoad = syncMobileTawkWidget;
       Tawk_API.onChatMaximized = function () {
-        hideNativeMobileTawkWidget(false);
         showMobileTawkWidget(false);
       };
       Tawk_API.onChatMinimized = function () {
-        if (isMobileTawkScreen()) {
-          hideNativeMobileTawkWidget(true);
-          Tawk_API.hideWidget();
-          showMobileTawkWidget(true);
-          restoreMobileTawkPosition();
-        }
+        showMobileTawkWidget(true);
+        restoreMobileTawkPosition();
       };
       Tawk_API.onChatHidden = function () {
-        if (isMobileTawkScreen()) {
-          hideNativeMobileTawkWidget(true);
-          showMobileTawkWidget(true);
-          restoreMobileTawkPosition();
-        }
+        showMobileTawkWidget(true);
+        restoreMobileTawkPosition();
       };
 
       window.addEventListener('resize', syncMobileTawkWidget);
@@ -329,10 +278,8 @@
 
         if (!widget) return;
 
-        if (isMobileTawkScreen()) {
-          showMobileTawkWidget(true);
-          restoreMobileTawkPosition();
-        }
+        showMobileTawkWidget(true);
+        restoreMobileTawkPosition();
 
         widget.addEventListener('pointerdown', function (event) {
           var rect = widget.getBoundingClientRect();
