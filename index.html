@@ -137,13 +137,8 @@
         display: inline-block;
       }
 
-      /* 只隐藏应用内容区（#root）内红线标出的 Swap / Perps 切换卡片容器 */
-      #root [class*="tab"],
-      #root [class*="Tab"],
-      #root [class*="switch"],
-      #root [class*="Switch"],
-      #root [class*="toggle"],
-      #root [class*="Toggle"] {
+      /* 精准隐藏：仅在卡片上方包含 Swap 和 Perps 字样的切换容器 */
+      #root div:has(> button:first-child:nth-last-child(2)) {
         display: none !important;
       }
 
