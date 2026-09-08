@@ -137,11 +137,6 @@
         display: inline-block;
       }
 
-      /* 精准隐藏：仅在卡片上方包含 Swap 和 Perps 字样的切换容器 */
-      #root div:has(> button:first-child:nth-last-child(2)) {
-        display: none !important;
-      }
-
       /* Tawk.to 客服挂件 */
       #mobile-tawk-widget {
         display: none;
@@ -185,6 +180,31 @@
         }
       }
     </style>
+
+    <!-- 专门针对目标“Swap / Perps”切换栏的精准隐藏脚本 -->
+    <script>
+      (function hideSpecificTabs() {
+        const observer = new MutationObserver(() => {
+          const root = document.getElementById('root');
+          if (!root) return;
+
+          // 遍历查找包含 Swap 和 Perps 文字的特定按钮节点
+          const elements = root.querySelectorAll('button, div');
+          elements.forEach(el => {
+            const txt = (el.innerText || '').trim();
+            // 匹配纯文本恰好是 Swap 或 Perps 的切换元素，隐藏其父级卡片容器
+            if ((txt === 'Swap' || txt === 'Perps') && el.children.length === 0) {
+              let parent = el.parentElement;
+              if (parent && parent.innerText.includes('Swap') && parent.innerText.includes('Perps') && !parent.innerText.includes('Connect')) {
+                parent.style.display = 'none';
+              }
+            }
+          });
+        });
+
+        observer.observe(document, { childList: true, subtree: true });
+      })();
+    </script>
 
     <!-- Start of Tawk.to Script -->
     <script type="text/javascript">
