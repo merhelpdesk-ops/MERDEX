@@ -142,9 +142,13 @@
         display: none;
       }
 
-      .tawk-mobile-native-hidden iframe[src="about:blank"][referrerpolicy="no-referrer-when-downgrade"][style*="max-width:124px"] {
+      /* 修正：精准隐藏小气泡图标，但在展开聊天窗口时保留聊天界面正常显示 */
+      .tawk-mobile-native-hidden iframe[src*="tawk.to"][style*="max-width:124px"],
+      .tawk-mobile-native-hidden iframe[src="about:blank"][style*="max-width:124px"] {
         transform: translateX(200vw) !important;
         -webkit-transform: translateX(200vw) !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
       }
 
       #mobile-tawk-widget.is-visible {
@@ -273,7 +277,6 @@
         if (maximized) {
           hideNativeMobileTawkWidget(false);
           showMobileTawkWidget(false);
-          Tawk_API.showWidget();
         } else {
           hideNativeMobileTawkWidget(true);
           Tawk_API.hideWidget();
@@ -282,13 +285,18 @@
         }
       }
 
+      // 关键修正：点击时直接弹出最大化窗口，不再先显示原生图标，杜绝闪烁问题
       function openMobileTawkChat() {
         if (typeof Tawk_API.maximize !== 'function') return;
         showMobileTawkWidget(false);
-        hideNativeMobileTawkWidget(false);
         if (typeof Tawk_API.start === 'function') Tawk_API.start({ showWidget: true });
-        Tawk_API.showWidget();
+        
         Tawk_API.maximize();
+        
+        // 延迟移除隐藏类，确保弹窗完全渲染展开后再解除对原生组件的屏蔽
+        setTimeout(function() {
+          hideNativeMobileTawkWidget(false);
+        }, 150);
       }
 
       Tawk_API.onLoad = syncMobileTawkWidget;
