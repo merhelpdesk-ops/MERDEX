@@ -72,7 +72,7 @@
       }
 
       .merdex-nav-header::-webkit-scrollbar {
-        display: none; /* 隐去移动端滚动条 */
+        display: none;
       }
 
       .merdex-logo-container {
@@ -128,7 +128,6 @@
         color: #ffffff;
       }
 
-      /* 点亮状态的小绿点样式 */
       .green-dot {
         width: 6px;
         height: 6px;
@@ -137,23 +136,9 @@
         display: inline-block;
       }
 
-      /* Tawk.to 客服挂件 */
+      /* 自定义客服拖拽按钮 */
       #mobile-tawk-widget {
         display: none;
-      }
-
-      /* 核心修改：通过通配属性，精准硬封杀所有 Tawk.to 原生悬浮小图标/气泡，仅保留展开后高100%的全屏聊天框 */
-      iframe[src*="tawk.to"]:not([style*="height: 100%"]):not([style*="height:100%"]),
-      iframe[src="about:blank"]:not([style*="height: 100%"]):not([style*="height:100%"]) {
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-        position: absolute !important;
-        left: -9999px !important;
-        top: -9999px !important;
-        width: 0 !important;
-        height: 0 !important;
       }
 
       #mobile-tawk-widget.is-visible {
@@ -188,40 +173,49 @@
           right: 20px;
         }
       }
+
+      /* ------------------------------------------------------------- */
+      /* 核心解决：全局死封 Tawk 原生小圆球/小气泡的所有容器 DOM */
+      /* ------------------------------------------------------------- */
+      #tawk-bubble-container,
+      .tawk-min-container,
+      .tawk-button-circle,
+      div[class*="tawk-widget"],
+      div[id*="tawk-bubble"] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        width: 0 !important;
+        height: 0 !important;
+      }
+
+      /* 针对尺寸不是全屏/展开框的所有窗口强行隐形 */
+      iframe[title*="chat"]:not([style*="height: 100%"]):not([style*="height:100%"]),
+      iframe[src*="tawk.to"]:not([style*="height: 100%"]):not([style*="height:100%"]) {
+        display: none !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+      }
     </style>
 
-    <!-- 专门针对目标“Swap / Perps”切换栏及 Tawk 原生小图标的无死角拦截脚本 -->
+    <!-- 隐藏特定 Swap/Perps 按钮的脚本 -->
     <script>
       (function hideSpecificTabs() {
         const observer = new MutationObserver(() => {
-          // 逻辑 1：隐藏 Swap / Perps 卡片容器
           const root = document.getElementById('root');
-          if (root) {
-            const elements = root.querySelectorAll('button, div');
-            elements.forEach(el => {
-              const txt = (el.innerText || '').trim();
-              if ((txt === 'Swap' || txt === 'Perps') && el.children.length === 0) {
-                let parent = el.parentElement;
-                if (parent && parent.innerText.includes('Swap') && parent.innerText.includes('Perps') && !parent.innerText.includes('Connect')) {
-                  parent.style.display = 'none';
-                }
+          if (!root) return;
+          const elements = root.querySelectorAll('button, div');
+          elements.forEach(el => {
+            const txt = (el.innerText || '').trim();
+            if ((txt === 'Swap' || txt === 'Perps') && el.children.length === 0) {
+              let parent = el.parentElement;
+              if (parent && parent.innerText.includes('Swap') && parent.innerText.includes('Perps') && !parent.innerText.includes('Connect')) {
+                parent.style.display = 'none';
               }
-            });
-          }
-
-          // 逻辑 2：实时监测并拔除 Tawk 原生小图标 iframe，防止初次插入 DOM 时的毫秒级闪烁
-          const tawkIframes = document.querySelectorAll('iframe[src*="tawk.to"], iframe[src="about:blank"]');
-          tawkIframes.forEach(iframe => {
-            const height = iframe.style.height || '';
-            if (!height.includes('100%')) {
-              iframe.style.setProperty('display', 'none', 'important');
-              iframe.style.setProperty('opacity', '0', 'important');
-              iframe.style.setProperty('visibility', 'hidden', 'important');
-              iframe.style.setProperty('left', '-9999px', 'important');
             }
           });
         });
-
         observer.observe(document, { childList: true, subtree: true });
       })();
     </script>
@@ -230,7 +224,10 @@
     <script type="text/javascript">
       var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
       var mobileTawkPositionKey = 'merdex-mobile-tawk-position';
-      Tawk_API.autoStart = false;
+
+      // 关键改动 1：官方 API，从根源禁用原生 Widget 渲染
+      Tawk_API.autoStart = false; 
+      Tawk_API.hideWidget = true; 
 
       function isMobileTawkScreen() {
         return true;
@@ -273,10 +270,6 @@
       }
 
       function syncMobileTawkWidget() {
-        if (!isMobileTawkScreen()) {
-          showMobileTawkWidget(false);
-          return;
-        }
         var maximized = typeof Tawk_API.isChatMaximized === 'function' && Tawk_API.isChatMaximized();
         if (maximized) {
           showMobileTawkWidget(false);
@@ -286,28 +279,49 @@
         }
       }
 
+      // 关键改动 2：点击自定义图标时，只调用 maximize，绝对不传入 showWidget: true
       function openMobileTawkChat() {
         if (typeof Tawk_API.maximize !== 'function') return;
         showMobileTawkWidget(false);
-        if (typeof Tawk_API.start === 'function') Tawk_API.start({ showWidget: true });
+        
+        // 如果 API 没初始化成功，先异步启动，但强制关闭 Widget 展示
+        if (typeof Tawk_API.start === 'function') {
+          Tawk_API.start({ showWidget: false });
+        }
+        
+        // 强行隐藏原生小控件并展开大窗口
+        if (typeof Tawk_API.hideWidget === 'function') {
+          Tawk_API.hideWidget();
+        }
         Tawk_API.maximize();
       }
 
-      Tawk_API.onLoad = syncMobileTawkWidget;
+      Tawk_API.onLoad = function() {
+        // 加载完成后立刻隐藏原生挂件
+        if (typeof Tawk_API.hideWidget === 'function') {
+          Tawk_API.hideWidget();
+        }
+        syncMobileTawkWidget();
+      };
+
       Tawk_API.onChatMaximized = function () {
         showMobileTawkWidget(false);
       };
+
       Tawk_API.onChatMinimized = function () {
-        if (isMobileTawkScreen()) {
-          showMobileTawkWidget(true);
-          restoreMobileTawkPosition();
+        if (typeof Tawk_API.hideWidget === 'function') {
+          Tawk_API.hideWidget();
         }
+        showMobileTawkWidget(true);
+        restoreMobileTawkPosition();
       };
+
       Tawk_API.onChatHidden = function () {
-        if (isMobileTawkScreen()) {
-          showMobileTawkWidget(true);
-          restoreMobileTawkPosition();
+        if (typeof Tawk_API.hideWidget === 'function') {
+          Tawk_API.hideWidget();
         }
+        showMobileTawkWidget(true);
+        restoreMobileTawkPosition();
       };
 
       window.addEventListener('resize', syncMobileTawkWidget);
@@ -388,7 +402,7 @@
     <!-- End of Tawk.to Script -->
   </head>
   <body>
-    <!-- 顶部导航栏 (包含 Swap, Perps, MER VIP, Service) -->
+    <!-- 顶部导航栏 -->
     <header class="merdex-nav-header">
       <a href="https://mer.finance/" class="merdex-logo-container">
         <span class="merdex-logo-text">
@@ -415,6 +429,7 @@
 
     <div id="root"></div>
 
+    <!-- 自定义可拖拽的客服按钮 -->
     <button id="mobile-tawk-widget" type="button" aria-label="Chat widget" title="Chat widget"
       class="tawk-custom-color tawk-custom-border-color tawk-outline tawk-button tawk-button-circle tawk-button-large">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" height="32" width="32" role="img"
