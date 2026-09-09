@@ -88,7 +88,7 @@
         -webkit-tap-highlight-color: transparent;
       }
 
-      /* ---------------- PC 端样式（原封不动） ---------------- */
+      /* ---------------- PC 端样式 ---------------- */
       .merdex-mobile-top-bar {
         display: none; /* 电脑端隐藏移动端专用顶部栏 */
       }
@@ -117,23 +117,11 @@
         flex-shrink: 0;
       }
 
-      .merdex-logo-text {
-        color: #ffffff;
-        font-weight: 700;
-        font-size: 15px;
-        letter-spacing: 0.5px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-
-      .merdex-logo-badge {
-        background: #0284c7;
-        color: #ffffff;
-        font-size: 10px;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-weight: 600;
+      .merdex-logo-img {
+        height: 26px; /* 适配顶部栏的高度 */
+        width: auto;
+        display: block;
+        object-fit: contain;
       }
 
       .merdex-nav-links {
@@ -177,15 +165,14 @@
         display: inline-block;
       }
 
-      /* ---------------- 移动端深度优化样式 ---------------- */
+      /* ---------------- 移动端样式 ---------------- */
       @media (max-width: 768px) {
         body {
-          /* 预留底部导航与顶部Header的高 */
           padding-top: 48px;
           padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
         }
 
-        /* 移动端专用顶部极简 Header */
+        /* 移动端专用顶部 Header */
         .merdex-mobile-top-bar {
           display: flex;
           position: fixed;
@@ -206,6 +193,10 @@
         .merdex-logo-container {
           display: flex;
           margin-right: 0;
+        }
+
+        .merdex-mobile-top-bar .merdex-logo-img {
+          height: 24px; /* 手机端顶部 Logo 大小微调 */
         }
 
         /* 底部 TabBar */
@@ -255,10 +246,9 @@
         }
 
         .merdex-nav-item a:active {
-          transform: scale(0.92); /* 触控微反馈 */
+          transform: scale(0.92);
         }
 
-        /* Active 选中的 Tab 高亮与微调 */
         .merdex-nav-item.active a {
           color: var(--text-active);
           background: rgba(56, 189, 248, 0.08);
@@ -288,7 +278,7 @@
         }
       }
 
-      /* Tawk 客服悬浮球遮挡优化 */
+      /* Tawk 客服悬浮球优化 */
       #mobile-tawk-widget {
         align-items: center;
         background: #1595ad;
@@ -469,21 +459,17 @@
     </script>
   </head>
   <body>
-    <!-- 移动端专属顶部轻量 Header (仅移动端显示) -->
+    <!-- 移动端专属顶部 Header -->
     <div class="merdex-mobile-top-bar">
       <a href="https://mer.finance/" class="merdex-logo-container">
-        <span class="merdex-logo-text">
-          MER <span class="merdex-logo-badge">Global</span> MERDEX
-        </span>
+        <img src="/logo.webp" alt="MERDEX Logo" class="merdex-logo-img" />
       </a>
     </div>
 
-    <!-- 导航栏：PC端在顶端，移动端在底部固定 -->
+    <!-- 桌面端顶部导航栏 / 移动端底部固定导航栏 -->
     <header class="merdex-nav-header">
       <a href="https://mer.finance/" class="merdex-logo-container">
-        <span class="merdex-logo-text">
-          MER <span class="merdex-logo-badge">Global</span> MERDEX
-        </span>
+        <img src="/logo.webp" alt="MERDEX Logo" class="merdex-logo-img" />
       </a>
       <ul class="merdex-nav-links">
         <li class="merdex-nav-item active">
