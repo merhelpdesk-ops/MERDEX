@@ -266,20 +266,29 @@
           box-shadow: 0 0 6px #10b981;
         }
 
-        /* 核心修复：精准垫高钱包弹窗避开底栏，并限制宽度防止黄框超界 */
+        /* ---------------- 移动端 Thirdweb 钱包弹窗完美重置 ---------------- */
+        /* 1. 全局抬高弹窗容器 */
         div[role="dialog"], 
         div[class*="modal"], 
         div[class*="popup"],
         div[class*="Modal"],
         div[data-rk] {
-          margin-bottom: calc(65px + env(safe-area-inset-bottom, 0px)) !important;
-          max-width: 92vw !important;
+          margin-bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important;
+          max-width: 95vw !important;
           box-sizing: border-box !important;
         }
 
-        div[role="dialog"] > div, 
-        div[class*="modal"] > div {
+        /* 2. 彻底限制黄色提示框（Why don't I see my wallet）不要向右溢出 */
+        div[role="dialog"] * {
           max-width: 100% !important;
+          box-sizing: border-box !important;
+          word-break: break-word !important;
+        }
+
+        /* 3. 允许弹窗内区域垂直滚动，避免太长挤出屏幕外部 */
+        div[role="dialog"] > div {
+          max-height: calc(85vh - 70px) !important;
+          overflow-y: auto !important;
           overflow-x: hidden !important;
         }
       }
@@ -324,22 +333,38 @@
       }
     </style>
 
-    <!-- 纯静默观察脚本 -->
+    <!-- 纯静默观察脚本（智能清理手机端弹窗多余冗余介绍 & 选项卡） -->
     <script>
       (function hideSpecificTabs() {
         const observer = new MutationObserver(() => {
           const root = document.getElementById('root');
-          if (!root) return;
-          const elements = root.querySelectorAll('button, div');
-          elements.forEach(el => {
-            const txt = (el.innerText || '').trim();
-            if ((txt === 'Swap' || txt === 'Perps') && el.children.length === 0) {
-              let parent = el.parentElement;
-              if (parent && parent.innerText.includes('Swap') && parent.innerText.includes('Perps') && !parent.innerText.includes('Connect')) {
-                parent.style.display = 'none';
+          if (root) {
+            const elements = root.querySelectorAll('button, div');
+            elements.forEach(el => {
+              const txt = (el.innerText || '').trim();
+              if ((txt === 'Swap' || txt === 'Perps') && el.children.length === 0) {
+                let parent = el.parentElement;
+                if (parent && parent.innerText.includes('Swap') && parent.innerText.includes('Perps') && !parent.innerText.includes('Connect')) {
+                  parent.style.display = 'none';
+                }
               }
-            }
-          });
+            });
+          }
+
+          // 专门针对手机端 Thirdweb 弹窗的冗余“Connect your wallet”介绍框进行精简
+          if (window.innerWidth <= 768) {
+            const modals = document.querySelectorAll('div[role="dialog"]');
+            modals.forEach(modal => {
+              const allDivs = modal.querySelectorAll('div');
+              allDivs.forEach(d => {
+                // 如果发现内部有二次重复的 Connect your wallet 底部大卡片，手机端给予自适应高度处理
+                if (d.innerText && d.innerText.includes('Connecting your wallet is like') && d.children.length > 1) {
+                  d.style.marginTop = '10px';
+                  d.style.padding = '12px';
+                }
+              });
+            });
+          }
         });
         observer.observe(document, { childList: true, subtree: true });
       })();
