@@ -115,13 +115,16 @@
         margin-right: 18px;
         text-decoration: none;
         flex-shrink: 0;
+        overflow: hidden;
       }
 
+      /* 针对海报长图截取显示 Logo 部分 */
       .merdex-logo-img {
-        height: 26px; /* 适配顶部栏的高度 */
-        width: auto;
-        display: block;
-        object-fit: contain;
+        height: 32px;
+        width: 130px;
+        object-fit: cover;
+        object-position: center;
+        border-radius: 4px;
       }
 
       .merdex-nav-links {
@@ -196,7 +199,8 @@
         }
 
         .merdex-mobile-top-bar .merdex-logo-img {
-          height: 24px; /* 手机端顶部 Logo 大小微调 */
+          height: 28px;
+          width: 110px;
         }
 
         /* 底部 TabBar */
@@ -462,14 +466,14 @@
     <!-- 移动端专属顶部 Header -->
     <div class="merdex-mobile-top-bar">
       <a href="https://mer.finance/" class="merdex-logo-container">
-        <img src="/logo.webp" alt="MERDEX Logo" class="merdex-logo-img" />
+        <img src="/MERDEX_Poster.JPG" alt="MERDEX Logo" class="merdex-logo-img" />
       </a>
     </div>
 
     <!-- 桌面端顶部导航栏 / 移动端底部固定导航栏 -->
     <header class="merdex-nav-header">
       <a href="https://mer.finance/" class="merdex-logo-container">
-        <img src="/logo.webp" alt="MERDEX Logo" class="merdex-logo-img" />
+        <img src="/MERDEX_Poster.JPG" alt="MERDEX Logo" class="merdex-logo-img" />
       </a>
       <ul class="merdex-nav-links">
         <li class="merdex-nav-item active">
