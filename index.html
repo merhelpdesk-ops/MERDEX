@@ -30,45 +30,27 @@
     <meta name="theme-color" content="#0d0e12" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta
-      name="apple-mobile-web-app-status-bar-style"
-      content="black-translucent"
-    />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="apple-touch-icon" href="/favicon.webp" />
 
     <title>MERDEX</title>
-    <meta
-      name="description"
-      content="MERDEX is a secure and high-speed aggregate platform."
-    />
+    <meta name="description" content="MERDEX is a secure and high-speed aggregate platform." />
     <link rel="canonical" href="https://mer.finance/" />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="MERDEX" />
     <meta property="og:title" content="MERDEX" />
-    <meta
-      property="og:description"
-      content="MERDEX is a secure and high-speed aggregate platform."
-    />
+    <meta property="og:description" content="MERDEX is a secure and high-speed aggregate platform." />
     <meta property="og:url" content="https://mer.finance/" />
-    <meta
-      property="og:image"
-      content="https://mer.finance/merdex-social-card.png"
-    />
+    <meta property="og:image" content="https://mer.finance/merdex-social-card.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="MERDEX" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="MERDEX" />
-    <meta
-      name="twitter:description"
-      content="MERDEX is a secure and high-speed aggregate platform."
-    />
-    <meta
-      name="twitter:image"
-      content="https://mer.finance/merdex-social-card.png"
-    />
+    <meta name="twitter:description" content="MERDEX is a secure and high-speed aggregate platform." />
+    <meta name="twitter:image" content="https://mer.finance/merdex-social-card.png" />
     <meta name="twitter:image:alt" content="MERDEX" />
 
     <style>
@@ -96,7 +78,7 @@
       .merdex-nav-header {
         display: flex;
         align-items: center;
-        background-color: #0d0e12; /* 契合黑色背景 */
+        background-color: #0d0e12;
         border-bottom: 1px solid #1e2330;
         height: 52px;
         padding: 0 16px;
@@ -109,7 +91,6 @@
         display: none;
       }
 
-      /* Logo 容器：去除了原来白色底框，改为完美融合的渐变质感 */
       .merdex-logo-container {
         display: flex;
         align-items: center;
@@ -179,11 +160,17 @@
         display: inline-block;
       }
 
-      /* ---------------- 移动端样式 ---------------- */
+      /* ---------------- 移动端样式修缮 ---------------- */
       @media (max-width: 768px) {
         body {
-          padding-top: 48px;
+          /* 顶栏预留 56px 上边距，避免内容被 fixed 顶栏盖住 */
+          padding-top: 56px;
           padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+        }
+
+        /* 移动端主内容区域顶部留出间距，保护 Wallet Connect 按钮 */
+        #root {
+          margin-top: 8px;
         }
 
         .merdex-mobile-top-bar {
@@ -192,7 +179,7 @@
           top: 0;
           left: 0;
           right: 0;
-          height: 48px;
+          height: 52px;
           background: rgba(13, 14, 18, 0.95);
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);
@@ -206,11 +193,18 @@
         .merdex-mobile-top-bar .merdex-logo-container {
           display: flex;
           margin-right: 0;
-          height: 30px;
+          height: 32px;
         }
 
         .merdex-mobile-top-bar .merdex-logo-img {
           max-width: 120px;
+        }
+
+        /* 预留右侧挂载钱包按钮的容器 */
+        .merdex-mobile-right-actions {
+          display: flex;
+          align-items: center;
+          gap: 8px;
         }
 
         .merdex-nav-header {
@@ -290,26 +284,26 @@
         }
       }
 
-      /* Tawk 客服悬浮球 */
+      /* Tawk 客服悬浮球：调整底部高度避开主交互区 */
       #mobile-tawk-widget {
         align-items: center;
         background: #1595ad;
         border: 0;
         border-radius: 50%;
-        bottom: calc(75px + env(safe-area-inset-bottom, 0px));
+        bottom: calc(82px + env(safe-area-inset-bottom, 0px));
         box-shadow: 0 5px 18px rgba(21, 149, 173, 0.4);
         color: #fff;
         cursor: grab;
         display: flex;
-        height: 44px;
+        height: 40px;
         justify-content: center;
         padding: 0;
         position: fixed;
-        right: 16px;
+        right: 14px;
         touch-action: none;
         user-select: none;
-        width: 44px;
-        z-index: 2000000001;
+        width: 40px;
+        z-index: 999;
         transition: transform 0.15s ease, opacity 0.2s ease;
       }
 
@@ -331,10 +325,13 @@
     </style>
 
     <script>
-      (function hideSpecificTabs() {
+      /* 自动避让与组件挂载脚本 */
+      (function adjustMobileLayout() {
         const observer = new MutationObserver(() => {
           const root = document.getElementById('root');
           if (!root) return;
+
+          // 隐藏指定 Tab
           const elements = root.querySelectorAll('button, div');
           elements.forEach(el => {
             const txt = (el.innerText || '').trim();
@@ -345,6 +342,15 @@
               }
             }
           });
+
+          // 如果原生页面顶栏有 Connect Wallet / 钱包按钮，将其移动或对齐至右侧顶栏
+          const connectBtn = Array.from(root.querySelectorAll('button')).find(
+            b => b.innerText.includes('Connect') || b.innerText.includes('0x') || b.innerText.includes('Wallet')
+          );
+          const topContainer = document.getElementById('mobile-wallet-slot');
+          if (connectBtn && topContainer && !topContainer.contains(connectBtn)) {
+             topContainer.appendChild(connectBtn);
+          }
         });
         observer.observe(document, { childList: true, subtree: true });
       })();
@@ -471,11 +477,12 @@
     </script>
   </head>
   <body>
-    <!-- 移动端专属顶部 Header -->
+    <!-- 移动端专属顶部 Header（左侧 Logo，右侧挂载连接钱包按钮） -->
     <div class="merdex-mobile-top-bar">
       <a href="https://mer.finance/" class="merdex-logo-container">
         <img src="/MERDEX_Poster.png" alt="MERDEX Logo" class="merdex-logo-img" />
       </a>
+      <div id="mobile-wallet-slot" class="merdex-mobile-right-actions"></div>
     </div>
 
     <!-- 桌面端顶部导航栏 / 移动端底部固定导航栏 -->
@@ -518,7 +525,7 @@
 
     <button id="mobile-tawk-widget" type="button" aria-label="Chat widget" title="Chat widget"
       class="tawk-custom-color tawk-custom-border-color tawk-outline tawk-button tawk-button-circle tawk-button-large">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" height="32" width="32" role="img"
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" height="28" width="28" role="img"
         aria-labelledby="tawk-open-icon-title tawk-open-icon-description" class="tawk-min-chat-icon">
         <title id="tawk-open-icon-title">Opens Chat</title>
         <desc id="tawk-open-icon-description">This icon opens the chat window.</desc>
