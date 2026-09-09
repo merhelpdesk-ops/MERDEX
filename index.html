@@ -79,6 +79,7 @@
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       }
 
+      /* Desktop / Default Nav Header Styles */
       .merdex-nav-header {
         display: flex;
         align-items: center;
@@ -129,6 +130,7 @@
         list-style: none;
         margin: 0;
         padding: 0;
+        width: auto;
       }
 
       .merdex-nav-item a {
@@ -148,12 +150,82 @@
         color: #ffffff;
       }
 
+      .nav-icon {
+        display: none;
+        width: 20px;
+        height: 20px;
+        fill: currentColor;
+      }
+
       .green-dot {
         width: 6px;
         height: 6px;
         background-color: #10b981;
         border-radius: 50%;
         display: inline-block;
+      }
+
+      /* Mobile Bottom Navigation Styles */
+      @media (max-width: 768px) {
+        body {
+          padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+        }
+
+        .merdex-nav-header {
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          top: auto;
+          height: calc(60px + env(safe-area-inset-bottom, 0px));
+          padding-bottom: env(safe-area-inset-bottom, 0px);
+          background-color: #0d0e12;
+          border-top: 1px solid #1e2330;
+          border-bottom: none;
+          z-index: 9999;
+          justify-content: space-around;
+          overflow: visible;
+        }
+
+        .merdex-logo-container {
+          display: none; /* 移动端隐藏顶部 Logo，移至底部导航栏 */
+        }
+
+        .merdex-nav-links {
+          width: 100%;
+          justify-content: space-around;
+          gap: 0;
+        }
+
+        .merdex-nav-item {
+          flex: 1;
+          text-align: center;
+        }
+
+        .merdex-nav-item a {
+          flex-direction: column;
+          gap: 3px;
+          padding: 6px 0;
+          font-size: 11px;
+          justify-content: center;
+        }
+
+        .nav-icon {
+          display: block;
+        }
+
+        .green-dot {
+          position: absolute;
+          top: 2px;
+          right: -4px;
+        }
+
+        .icon-wrapper {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
       }
 
       #mobile-tawk-widget {
@@ -344,18 +416,31 @@
       </a>
       <ul class="merdex-nav-links">
         <li class="merdex-nav-item active">
-          <a href="/">Swap</a>
-        </li>
-        <li class="merdex-nav-item">
-          <a href="https://perp.mer.finance">
-            <span class="green-dot"></span> Perps
+          <a href="/">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z"/></svg>
+            <span>Swap</span>
           </a>
         </li>
         <li class="merdex-nav-item">
-          <a href="https://vip.mer.finance">MER VIP</a>
+          <a href="https://perp.mer.finance">
+            <span class="icon-wrapper">
+              <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 15.66z"/></svg>
+              <span class="green-dot"></span>
+            </span>
+            <span>Perps</span>
+          </a>
         </li>
         <li class="merdex-nav-item">
-          <a href="https://service.mer.finance">Service</a>
+          <a href="https://vip.mer.finance">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+            <span>MER VIP</span>
+          </a>
+        </li>
+        <li class="merdex-nav-item">
+          <a href="https://service.mer.finance">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+            <span>Service</span>
+          </a>
         </li>
       </ul>
     </header>
