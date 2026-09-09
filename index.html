@@ -152,15 +152,16 @@
         display: inline-block;
       }
 
-      /* ---------------- 移动端防遮挡与适配方案 ---------------- */
+      /* ---------------- 移动端精准适配方案 ---------------- */
       @media (max-width: 768px) {
         body {
           padding-top: 52px !important;
-          padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+          padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
         }
 
         #root {
-          padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+          padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
+          box-sizing: border-box;
         }
 
         .merdex-mobile-top-bar {
@@ -264,23 +265,15 @@
           right: -3px;
           box-shadow: 0 0 6px #10b981;
         }
-
-        /* 核心修补：强制让底部出现的 Modal/弹窗 抬高，防止被底部导航栏挡住 */
-        div[role="dialog"], 
-        div[class*="modal"], 
-        div[class*="drawer"],
-        div[class*="popup"] {
-          bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important;
-        }
       }
 
-      /* Tawk 客服悬浮球 */
+      /* Tawk 客服悬浮球：恢复合理右下角贴边定位 */
       #mobile-tawk-widget {
         align-items: center;
         background: #1595ad;
         border: 0;
         border-radius: 50%;
-        bottom: calc(120px + env(safe-area-inset-bottom, 0px));
+        bottom: calc(72px + env(safe-area-inset-bottom, 0px));
         box-shadow: 0 5px 18px rgba(21, 149, 173, 0.4);
         color: #fff;
         cursor: grab;
