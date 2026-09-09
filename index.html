@@ -160,17 +160,12 @@
         display: inline-block;
       }
 
-      /* ---------------- 移动端样式修缮 ---------------- */
+      /* ---------------- 移动端纯 CSS 防遮挡方案 ---------------- */
       @media (max-width: 768px) {
+        /* 给 body 增加足够的上边距，把整个 React 页面整体向下推，彻底避开顶部 logo 栏 */
         body {
-          /* 顶栏预留 56px 上边距，避免内容被 fixed 顶栏盖住 */
-          padding-top: 56px;
-          padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
-        }
-
-        /* 移动端主内容区域顶部留出间距，保护 Wallet Connect 按钮 */
-        #root {
-          margin-top: 8px;
+          padding-top: 52px !important;
+          padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
         }
 
         .merdex-mobile-top-bar {
@@ -179,7 +174,7 @@
           top: 0;
           left: 0;
           right: 0;
-          height: 52px;
+          height: 48px;
           background: rgba(13, 14, 18, 0.95);
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);
@@ -187,24 +182,17 @@
           z-index: 9998;
           padding: 0 16px;
           align-items: center;
-          justify-content: space-between;
+          justify-content: flex-start;
         }
 
         .merdex-mobile-top-bar .merdex-logo-container {
           display: flex;
           margin-right: 0;
-          height: 32px;
+          height: 30px;
         }
 
         .merdex-mobile-top-bar .merdex-logo-img {
           max-width: 120px;
-        }
-
-        /* 预留右侧挂载钱包按钮的容器 */
-        .merdex-mobile-right-actions {
-          display: flex;
-          align-items: center;
-          gap: 8px;
         }
 
         .merdex-nav-header {
@@ -284,13 +272,13 @@
         }
       }
 
-      /* Tawk 客服悬浮球：调整底部高度避开主交互区 */
+      /* Tawk 客服悬浮球 */
       #mobile-tawk-widget {
         align-items: center;
         background: #1595ad;
         border: 0;
         border-radius: 50%;
-        bottom: calc(82px + env(safe-area-inset-bottom, 0px));
+        bottom: calc(75px + env(safe-area-inset-bottom, 0px));
         box-shadow: 0 5px 18px rgba(21, 149, 173, 0.4);
         color: #fff;
         cursor: grab;
@@ -324,14 +312,12 @@
       }
     </style>
 
+    <!-- 纯静默观察脚本（只做样式隐蔽，绝不移动/破坏 DOM 节点） -->
     <script>
-      /* 自动避让与组件挂载脚本 */
-      (function adjustMobileLayout() {
+      (function hideSpecificTabs() {
         const observer = new MutationObserver(() => {
           const root = document.getElementById('root');
           if (!root) return;
-
-          // 隐藏指定 Tab
           const elements = root.querySelectorAll('button, div');
           elements.forEach(el => {
             const txt = (el.innerText || '').trim();
@@ -342,15 +328,6 @@
               }
             }
           });
-
-          // 如果原生页面顶栏有 Connect Wallet / 钱包按钮，将其移动或对齐至右侧顶栏
-          const connectBtn = Array.from(root.querySelectorAll('button')).find(
-            b => b.innerText.includes('Connect') || b.innerText.includes('0x') || b.innerText.includes('Wallet')
-          );
-          const topContainer = document.getElementById('mobile-wallet-slot');
-          if (connectBtn && topContainer && !topContainer.contains(connectBtn)) {
-             topContainer.appendChild(connectBtn);
-          }
         });
         observer.observe(document, { childList: true, subtree: true });
       })();
@@ -477,12 +454,11 @@
     </script>
   </head>
   <body>
-    <!-- 移动端专属顶部 Header（左侧 Logo，右侧挂载连接钱包按钮） -->
+    <!-- 移动端专属顶部 Header -->
     <div class="merdex-mobile-top-bar">
       <a href="https://mer.finance/" class="merdex-logo-container">
         <img src="/MERDEX_Poster.png" alt="MERDEX Logo" class="merdex-logo-img" />
       </a>
-      <div id="mobile-wallet-slot" class="merdex-mobile-right-actions"></div>
     </div>
 
     <!-- 桌面端顶部导航栏 / 移动端底部固定导航栏 -->
