@@ -43,15 +43,11 @@
     <meta property="og:description" content="MERDEX is a secure and high-speed aggregate platform." />
     <meta property="og:url" content="https://mer.finance/" />
     <meta property="og:image" content="https://mer.finance/merdex-social-card.png" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="MERDEX" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="MERDEX" />
     <meta name="twitter:description" content="MERDEX is a secure and high-speed aggregate platform." />
     <meta name="twitter:image" content="https://mer.finance/merdex-social-card.png" />
-    <meta name="twitter:image:alt" content="MERDEX" />
 
     <style>
       :root {
@@ -156,10 +152,14 @@
         display: inline-block;
       }
 
-      /* ---------------- 移动端纯 CSS 防遮挡方案 ---------------- */
+      /* ---------------- 移动端防遮挡与适配方案 ---------------- */
       @media (max-width: 768px) {
         body {
           padding-top: 52px !important;
+          padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+        }
+
+        #root {
           padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
         }
 
@@ -264,6 +264,14 @@
           right: -3px;
           box-shadow: 0 0 6px #10b981;
         }
+
+        /* 核心修补：强制让底部出现的 Modal/弹窗 抬高，防止被底部导航栏挡住 */
+        div[role="dialog"], 
+        div[class*="modal"], 
+        div[class*="drawer"],
+        div[class*="popup"] {
+          bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important;
+        }
       }
 
       /* Tawk 客服悬浮球 */
@@ -272,7 +280,7 @@
         background: #1595ad;
         border: 0;
         border-radius: 50%;
-        bottom: calc(75px + env(safe-area-inset-bottom, 0px));
+        bottom: calc(120px + env(safe-area-inset-bottom, 0px));
         box-shadow: 0 5px 18px rgba(21, 149, 173, 0.4);
         color: #fff;
         cursor: grab;
@@ -285,7 +293,7 @@
         touch-action: none;
         user-select: none;
         width: 40px;
-        z-index: 999;
+        z-index: 2000000001;
         transition: transform 0.15s ease, opacity 0.2s ease;
       }
 
