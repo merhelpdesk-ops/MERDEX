@@ -4,8 +4,8 @@ import { useEffect } from "react";
 const mobileModalStyles = `
   @media (max-width: 767px) {
     :host .background.full-screen-background {
-      height: 99vh;
-      height: 99dvh;
+      height: 97vh;
+      height: 97dvh;
     }
 
     :host .modal-container-mobile.modal-position {
