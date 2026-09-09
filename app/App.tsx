@@ -4,8 +4,10 @@ import OrderlyProvider from "@/components/orderlyProvider";
 import { HttpsRequiredWarning } from "@/components/HttpsRequiredWarning";
 import { withBasePath } from "./utils/base-path";
 import { getSEOConfig, getUserLanguage } from "./utils/seo";
+import { useWalletModalViewport } from "./hooks/useWalletModalViewport";
 
 export default function App() {
+  useWalletModalViewport();
   const seoConfig = getSEOConfig();
   const defaultLanguage = getUserLanguage();
   
@@ -24,4 +26,3 @@ export default function App() {
     </>
   );
 }
-
