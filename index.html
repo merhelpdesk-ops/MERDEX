@@ -265,9 +265,26 @@
           right: -3px;
           box-shadow: 0 0 6px #10b981;
         }
+
+        /* 核心修复：精准垫高钱包弹窗避开底栏，并限制宽度防止黄框超界 */
+        div[role="dialog"], 
+        div[class*="modal"], 
+        div[class*="popup"],
+        div[class*="Modal"],
+        div[data-rk] {
+          margin-bottom: calc(65px + env(safe-area-inset-bottom, 0px)) !important;
+          max-width: 92vw !important;
+          box-sizing: border-box !important;
+        }
+
+        div[role="dialog"] > div, 
+        div[class*="modal"] > div {
+          max-width: 100% !important;
+          overflow-x: hidden !important;
+        }
       }
 
-      /* Tawk 客服悬浮球：恢复合理右下角贴边定位 */
+      /* Tawk 客服悬浮球：贴边定位且支持自由拖拽 */
       #mobile-tawk-widget {
         align-items: center;
         background: #1595ad;
