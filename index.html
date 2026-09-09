@@ -66,7 +66,6 @@
         -webkit-tap-highlight-color: transparent;
       }
 
-      /* ---------------- PC 端样式 ---------------- */
       .merdex-mobile-top-bar {
         display: none;
       }
@@ -152,7 +151,6 @@
         display: inline-block;
       }
 
-      /* ---------------- 移动端精准适配方案 ---------------- */
       @media (max-width: 768px) {
         body {
           padding-top: 52px !important;
@@ -265,10 +263,7 @@
           right: -3px;
           box-shadow: 0 0 6px #10b981;
         }
-
-        /* ---------------- 移动端 Thirdweb 钱包弹窗超级重置 (零性能损耗 CSS) ---------------- */
         
-        /* 1. 将弹窗垂直方向整体向上挤压，离底部预留 70px + 安全区域 */
         div[role="dialog"] {
           margin-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
           max-height: calc(100vh - 120px) !important;
@@ -276,7 +271,6 @@
           box-sizing: border-box !important;
         }
 
-        /* 2. 强行使弹窗内部包裹层具备垂直滚动条，如果太高就内部滚动，不戳穿底部 */
         div[role="dialog"] > div {
           max-height: calc(100vh - 140px) !important;
           overflow-y: auto !important;
@@ -284,39 +278,36 @@
           box-sizing: border-box !important;
         }
 
-        /* 3. 彻底解决右侧黄色提示框溢出问题 */
         div[role="dialog"] * {
           max-width: 100% !important;
           box-sizing: border-box !important;
           word-break: break-word !important;
         }
 
-        /* 4. 强行修正黄色框原本极其夸张的内联绝对宽度 */
         div[role="dialog"] div[style*="width"] {
           width: 100% !important;
           min-width: 0 !important;
         }
       }
 
-      /* Tawk 客服悬浮球：贴边定位且支持自由拖拽 */
       #mobile-tawk-widget {
         align-items: center;
         background: #1595ad;
         border: 0;
         border-radius: 50%;
-        bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+        bottom: calc(76px + env(safe-area-inset-bottom, 0px));
         box-shadow: 0 5px 18px rgba(21, 149, 173, 0.4);
         color: #fff;
         cursor: grab;
         display: flex;
-        height: 40px;
+        height: 44px;
         justify-content: center;
         padding: 0;
         position: fixed;
-        right: 14px;
+        right: 16px;
         touch-action: none;
         user-select: none;
-        width: 40px;
+        width: 44px;
         z-index: 2000000001;
         transition: transform 0.15s ease, opacity 0.2s ease;
       }
@@ -338,7 +329,6 @@
       }
     </style>
 
-    <!-- 纯静默观察脚本（智能清理 Swap / Perps 多余页签，无CPU压力） -->
     <script>
       (function hideSpecificTabs() {
         const observer = new MutationObserver(() => {
@@ -460,14 +450,12 @@
     </script>
   </head>
   <body>
-    <!-- 移动端专属顶部 Header -->
     <div class="merdex-mobile-top-bar">
       <a href="https://mer.finance/" class="merdex-logo-container">
         <img src="/MERDEX_Poster.png" alt="MERDEX Logo" class="merdex-logo-img" />
       </a>
     </div>
 
-    <!-- 桌面端顶部导航栏 / 移动端底部固定导航栏 -->
     <header class="merdex-nav-header">
       <a href="https://mer.finance/" class="merdex-logo-container">
         <img src="/MERDEX_Poster.png" alt="MERDEX Logo" class="merdex-logo-img" />
@@ -507,7 +495,7 @@
 
     <button id="mobile-tawk-widget" type="button" aria-label="Chat widget" title="Chat widget"
       class="tawk-custom-color tawk-custom-border-color tawk-outline tawk-button tawk-button-circle tawk-button-large">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" height="28" width="28" role="img"
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" height="32" width="32" role="img"
         aria-labelledby="tawk-open-icon-title tawk-open-icon-description" class="tawk-min-chat-icon">
         <title id="tawk-open-icon-title">Opens Chat</title>
         <desc id="tawk-open-icon-description">This icon opens the chat window.</desc>
