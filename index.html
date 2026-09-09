@@ -90,7 +90,7 @@
 
       /* ---------------- PC 端样式 ---------------- */
       .merdex-mobile-top-bar {
-        display: none; /* 电脑端隐藏移动端专用顶部栏 */
+        display: none;
       }
 
       .merdex-nav-header {
@@ -109,7 +109,7 @@
         display: none;
       }
 
-      /* Logo 容器配置 */
+      /* 极致适配：容器尺寸控制 */
       .merdex-logo-container {
         display: flex;
         align-items: center;
@@ -117,24 +117,27 @@
         margin-right: 18px;
         text-decoration: none;
         flex-shrink: 0;
-        background: #ffffff;
-        padding: 3px 8px;
-        border-radius: 6px;
-        height: 30px;
-        box-sizing: border-box;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-        transition: opacity 0.2s ease;
+        width: 38px;
+        height: 38px;
+        overflow: hidden;
+        background: transparent;
+        border-radius: 8px;
+        transition: transform 0.2s ease, opacity 0.2s ease;
       }
 
       .merdex-logo-container:hover {
         opacity: 0.9;
+        transform: scale(1.05);
       }
 
+      /* 精准放大居中局部图形，隐藏边缘与文字 */
       .merdex-logo-img {
-        height: 100%;
-        width: auto;
-        object-fit: contain;
+        width: 120px;
+        height: auto;
+        max-width: none;
+        margin-top: -10px;
         display: block;
+        pointer-events: none;
       }
 
       .merdex-nav-links {
@@ -185,7 +188,6 @@
           padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
         }
 
-        /* 移动端专用顶部 Header */
         .merdex-mobile-top-bar {
           display: flex;
           position: fixed;
@@ -206,11 +208,15 @@
         .merdex-mobile-top-bar .merdex-logo-container {
           display: flex;
           margin-right: 0;
-          height: 28px;
-          padding: 2px 6px;
+          width: 32px;
+          height: 32px;
         }
 
-        /* 底部 TabBar */
+        .merdex-mobile-top-bar .merdex-logo-img {
+          width: 100px;
+          margin-top: -8px;
+        }
+
         .merdex-nav-header {
           position: fixed;
           bottom: 0;
@@ -229,7 +235,6 @@
           box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
         }
 
-        /* 隐藏 PC 放置在 NavHeader 内部的 Logo */
         .merdex-nav-header .merdex-logo-container {
           display: none;
         }
@@ -289,7 +294,7 @@
         }
       }
 
-      /* Tawk 客服悬浮球优化 */
+      /* Tawk 客服悬浮球 */
       #mobile-tawk-widget {
         align-items: center;
         background: #1595ad;
