@@ -96,7 +96,7 @@
       .merdex-nav-header {
         display: flex;
         align-items: center;
-        background-color: #090a0f;
+        background-color: #0d0e12; /* 契合黑色背景 */
         border-bottom: 1px solid #1e2330;
         height: 52px;
         padding: 0 16px;
@@ -109,35 +109,33 @@
         display: none;
       }
 
-      /* 极致适配：容器尺寸控制 */
+      /* Logo 容器：去除了原来白色底框，改为完美融合的渐变质感 */
       .merdex-logo-container {
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-right: 18px;
+        margin-right: 20px;
         text-decoration: none;
         flex-shrink: 0;
-        width: 38px;
         height: 38px;
-        overflow: hidden;
-        background: transparent;
-        border-radius: 8px;
-        transition: transform 0.2s ease, opacity 0.2s ease;
+        background: transparent !important;
+        padding: 0;
+        border-radius: 0;
+        box-shadow: none;
+        transition: opacity 0.2s ease, transform 0.2s ease;
       }
 
       .merdex-logo-container:hover {
-        opacity: 0.9;
-        transform: scale(1.05);
+        opacity: 0.85;
+        transform: scale(1.02);
       }
 
-      /* 精准放大居中局部图形，隐藏边缘与文字 */
       .merdex-logo-img {
-        width: 120px;
-        height: auto;
-        max-width: none;
-        margin-top: -10px;
+        height: 100%;
+        width: auto;
+        max-width: 150px;
+        object-fit: contain;
         display: block;
-        pointer-events: none;
       }
 
       .merdex-nav-links {
@@ -195,7 +193,7 @@
           left: 0;
           right: 0;
           height: 48px;
-          background: rgba(13, 14, 18, 0.9);
+          background: rgba(13, 14, 18, 0.95);
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);
           border-bottom: 1px solid var(--border-color);
@@ -208,13 +206,11 @@
         .merdex-mobile-top-bar .merdex-logo-container {
           display: flex;
           margin-right: 0;
-          width: 32px;
-          height: 32px;
+          height: 30px;
         }
 
         .merdex-mobile-top-bar .merdex-logo-img {
-          width: 100px;
-          margin-top: -8px;
+          max-width: 120px;
         }
 
         .merdex-nav-header {
@@ -478,14 +474,14 @@
     <!-- 移动端专属顶部 Header -->
     <div class="merdex-mobile-top-bar">
       <a href="https://mer.finance/" class="merdex-logo-container">
-        <img src="/MERDEX_Poster.PNG" alt="MERDEX Logo" class="merdex-logo-img" />
+        <img src="/MERDEX_Poster.png" alt="MERDEX Logo" class="merdex-logo-img" />
       </a>
     </div>
 
     <!-- 桌面端顶部导航栏 / 移动端底部固定导航栏 -->
     <header class="merdex-nav-header">
       <a href="https://mer.finance/" class="merdex-logo-container">
-        <img src="/MERDEX_Poster.PNG" alt="MERDEX Logo" class="merdex-logo-img" />
+        <img src="/MERDEX_Poster.png" alt="MERDEX Logo" class="merdex-logo-img" />
       </a>
       <ul class="merdex-nav-links">
         <li class="merdex-nav-item active">
