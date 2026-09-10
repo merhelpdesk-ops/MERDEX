@@ -5,9 +5,9 @@
     <link rel="icon" type="image/webp" href="/favicon.webp" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
-    <!-- 【最强杀招】放在 head 第一行：DOM 级别实时拦截，原生小图标一生成就直接秒杀移除 -->
+    <!-- 【不破坏通信的零闪烁拦截】在生成瞬间强封样式，保留其后台通信能力 -->
     <script>
-      (function killNativeTawkIcon() {
+      (function suppressNativeTawkIcon() {
         const observer = new MutationObserver((mutations) => {
           for (const mutation of mutations) {
             for (const node of mutation.addedNodes) {
@@ -16,7 +16,7 @@
                 const title = node.getAttribute('title') || '';
                 const style = node.getAttribute('style') || '';
                 
-                // 识别 Tawk 官方的原生气泡小图标 iframe（排除了展开后的聊天大窗口）
+                // 识别原生气泡图标 iframe（排除了展开后的聊天大窗口）
                 const isTawkBubble = 
                   (src.includes('about:blank') || title.toLowerCase().includes('chat widget')) &&
                   !style.includes('max-height: 100%') && 
@@ -24,15 +24,18 @@
                   !style.includes('height:100%');
 
                 if (isTawkBubble) {
-                  // 1. 彻底从 DOM 树拔除，根本不给它露头的机会
-                  node.remove();
+                  // 不 remove()，改用极低层级的隐藏，让它在后台默默工作
+                  node.style.setProperty('display', 'none', 'important');
+                  node.style.setProperty('visibility', 'hidden', 'important');
+                  node.style.setProperty('opacity', '0', 'important');
+                  node.style.setProperty('pointer-events', 'none', 'important');
+                  node.style.setProperty('transform', 'scale(0)', 'important');
                 }
               }
             }
           }
         });
 
-        // 监听整个 DOM 树的节点插入
         observer.observe(document.documentElement, { childList: true, subtree: true });
       })();
     </script>
@@ -304,15 +307,14 @@
         }
       }
 
-      /* CSS 静态强压，防止初次解析渲染时的微小闪烁 */
+      /* CSS 层死死压制原生气泡，不影响后台 JS 运行 */
       iframe[src="about:blank"][referrerpolicy="no-referrer-when-downgrade"],
       iframe[title*="chat widget"]:not([style*="max-height:100%"]):not([style*="height: 100%"]) {
         display: none !important;
         visibility: hidden !important;
         opacity: 0 !important;
-        width: 0 !important;
-        height: 0 !important;
         pointer-events: none !important;
+        transform: scale(0) !important;
       }
 
       /* 自定义客服悬浮球 */
@@ -379,7 +381,6 @@
     <script type="text/javascript">
       var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
       Tawk_API.lang = 'en';
-      Tawk_API.autoStart = false; // 官方关闭原生组件启动
 
       var mobileTawkPositionKey = 'merdex-mobile-tawk-position';
 
