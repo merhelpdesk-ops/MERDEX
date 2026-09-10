@@ -290,6 +290,14 @@
         }
       }
 
+      /* 隐藏 Tawk 原生小图标 iframe，保留自定义客服按钮和展开的聊天窗口。 */
+      iframe[src="about:blank"][referrerpolicy="no-referrer-when-downgrade"][style*="max-width:124px"],
+      iframe[src="about:blank"][referrerpolicy="no-referrer-when-downgrade"][style*="max-width: 124px"] {
+        transform: translateX(200vw) !important;
+        -webkit-transform: translateX(200vw) !important;
+      }
+
+      /* Tawk 客服悬浮球：贴边定位且支持自由拖拽 */
       #mobile-tawk-widget {
         align-items: center;
         background: #1595ad;
