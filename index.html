@@ -5,7 +5,7 @@
     <link rel="icon" type="image/webp" href="/favicon.webp" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 
-    <!-- 1. 样式拦截：全面隐藏所有相关 iframe 与全局容器 -->
+    <!-- 1. 样式拦截：保留长连接渲染逻辑，但通过坐标绝对移出视口，100% 隐藏原生的任何元素 -->
     <style>
       iframe[title*="chat widget"],
       iframe[src*="tawk.to"],
@@ -14,16 +14,14 @@
       .tawk-max-container,
       .tawk-card,
       .tawk-button {
-        display: none !important;
-        opacity: 0 !important;
-        visibility: hidden !important;
-        pointer-events: none !important;
-        width: 0 !important;
-        height: 0 !important;
-        position: absolute !important;
+        position: fixed !important;
         left: -9999px !important;
         top: -9999px !important;
-        z-index: -9999 !important;
+        width: 1px !important;
+        height: 1px !important;
+        opacity: 0.001 !important;
+        pointer-events: none !important;
+        z-index: -99999 !important;
       }
     </style>
 
@@ -140,7 +138,7 @@
         display: inline-block;
       }
 
-      /* 自定义悬浮球 + 自建 MERDEX 赛博暗黑风格客服面板 */
+      /* 自定义悬浮球 */
       #custom-chat-trigger {
         position: fixed;
         bottom: 80px;
@@ -189,7 +187,7 @@
       }
       .chat-badge.active { display: block; }
 
-      /* 自建暗黑 UI 聊天主窗口 */
+      /* 自建暗黑 UI 聊天面板 */
       #merdex-chat-window {
         position: fixed;
         bottom: 90px;
@@ -439,35 +437,15 @@
       }
     </style>
 
-    <!-- 2. 隐藏与完美通信机制 -->
+    <!-- 2. 全套消息通信与 API 机制 -->
     <script type="text/javascript">
       var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
       Tawk_API.lang = 'en';
 
-      // 强力隐藏 DOM
-      function hideTawkDOM() {
-        if (typeof Tawk_API.hideWidget === 'function') {
-          Tawk_API.hideWidget();
-        }
-        var elements = document.querySelectorAll('iframe[src*="tawk.to"], div[id*="tawk"]');
-        elements.forEach(function (el) {
-          el.style.setProperty('display', 'none', 'important');
-          el.style.setProperty('opacity', '0', 'important');
-          el.style.setProperty('visibility', 'hidden', 'important');
-        });
-      }
+      // 存储历史去重集合，避免消息重复渲染
+      var renderedMsgSet = new Set();
 
-      // 实时 DOM 监听（防止原生小工具弹出）
-      var observer = new MutationObserver(function (mutations) {
-        mutations.forEach(function (mutation) {
-          if (mutation.addedNodes.length) {
-            hideTawkDOM();
-          }
-        });
-      });
-      observer.observe(document.documentElement, { childList: true, subtree: true });
-
-      // 安全渲染消息（防 XSS，但支持 HTML 解析，如图片/链接）
+      // 渲染消息到自建 UI 界面
       function appendMessage(sender, rawContent, dateObj) {
         const msgContainer = document.getElementById('chat-messages');
         if (!msgContainer) return;
@@ -481,13 +459,18 @@
 
         if (!contentHtml) return;
 
+        // 生成唯一 Hash 避免历史消息去重时重复插入
+        const msgHash = `${sender}_${contentHtml}_${dateObj ? new Date(dateObj).getTime() : ''}`;
+        if (renderedMsgSet.has(msgHash)) return;
+        renderedMsgSet.add(msgHash);
+
         const row = document.createElement('div');
         row.className = `msg-row ${sender}`;
 
         const bubble = document.createElement('div');
         bubble.className = 'msg-bubble';
         
-        // 如果包含 HTML 标签（如图片，链接），使用 innerHTML，否则使用 textContent 防注入
+        // 允许解析后端传递过来的富文本格式（如图片/超链接）
         if (/<[a-z][\s\S]*>/i.test(contentHtml)) {
           bubble.innerHTML = contentHtml;
         } else {
@@ -506,13 +489,14 @@
         msgContainer.scrollTop = msgContainer.scrollHeight;
       }
 
-      // 初始化历史记录拉取
+      // 同步并加载全量聊天历史
       function loadChatHistory() {
         if (typeof Tawk_API.getHistory === 'function') {
           var history = Tawk_API.getHistory();
           if (history && history.length > 0) {
             const msgContainer = document.getElementById('chat-messages');
-            if (msgContainer) msgContainer.innerHTML = ''; // 清除默认欢迎语，使用真实历史
+            if (msgContainer) msgContainer.innerHTML = '';
+            renderedMsgSet.clear();
             
             history.forEach(function (msg) {
               var sender = (msg.publisher === 'agent' || msg.type === 'agent') ? 'agent' : 'user';
@@ -522,13 +506,15 @@
         }
       }
 
-      // Tawk 核心初始化生命周期
+      // Tawk 核心初始化：激活底层会话，并隐藏原生视图
       Tawk_API.onLoad = function () {
-        hideTawkDOM();
+        if (typeof Tawk_API.maximize === 'function') {
+          Tawk_API.maximize(); // 确保长连接处于完全激活状态
+        }
         loadChatHistory();
       };
 
-      // 接收来自客服端的消息
+      // 实时接收客服发来的消息
       Tawk_API.onChatMessageAgent = function(message) {
         appendMessage('agent', message);
 
@@ -539,13 +525,12 @@
         }
       };
 
-      // 接收访客多端/同步消息
+      // 多端/游客侧消息变动回调
       Tawk_API.onChatMessageVisitor = function(message) {
-        const input = document.getElementById('chat-input-field');
-        if (input && input.value !== '') return;
+        appendMessage('user', message);
       };
 
-      // 未读消息数变动通知
+      // 未读红点状态更新
       Tawk_API.onUnreadCountChanged = function(count) {
         const badge = document.getElementById('chat-unread-badge');
         if (badge) {
@@ -557,7 +542,7 @@
         }
       };
 
-      // 显隐面板控制
+      // 切换自定义聊天面板显隐
       function toggleCustomChat() {
         const win = document.getElementById('merdex-chat-window');
         if (win) {
@@ -565,32 +550,31 @@
           const badge = document.getElementById('chat-unread-badge');
           if (badge && win.classList.contains('open')) {
             badge.classList.remove('active');
-            if (typeof Tawk_API.minimize === 'function') {
-              Tawk_API.minimize();
-            }
           }
         }
       }
 
-      // 发送消息
+      // 核心发消息逻辑
       function handleSendMessage() {
         const input = document.getElementById('chat-input-field');
         const text = input.value.trim();
         if (!text) return;
 
+        // 本地实时先上屏
         appendMessage('user', text);
         input.value = '';
 
+        // 通过 Tawk API 投递消息给客服后台
         if (typeof Tawk_API.sendMessage === 'function') {
           Tawk_API.sendMessage(text, function(error) {
             if (error) {
-              console.error('Failed to send message via Tawk:', error);
+              console.error('Message failed to deliver:', error);
             }
           });
         }
       }
 
-      // 悬浮球拖拽与点击绑定
+      // 悬浮球拖拽与点击处理
       document.addEventListener('DOMContentLoaded', function () {
         var widget = document.getElementById('custom-chat-trigger');
         if (!widget) return;
@@ -633,7 +617,7 @@
         });
       });
 
-      // 引入官方 SDK 核心
+      // 引入 Tawk.to 官方 SDK
       (function () {
         var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
         s1.async = true;
@@ -692,7 +676,7 @@
 
     <div id="root"></div>
 
-    <!-- 悬浮触控球 -->
+    <!-- 自定义暗黑系客服触控球 -->
     <div id="custom-chat-trigger" role="button" aria-label="Customer Support">
       <span id="chat-unread-badge" class="chat-badge"></span>
       <svg viewBox="0 0 24 24">
