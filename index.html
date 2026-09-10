@@ -3,34 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     
-    <!-- 1. 核物理级黑洞样式：拦截所有常规挂载 -->
+    <!-- 1. 精确级黑洞样式：只针对未展开的小图标进行无影化，绝不破坏消息 Frame -->
     <style id="tawk-anti-flicker-style">
-      /* 强行封锁所有带有 tawk 标识的元素，除非它被打上了 is-chat-maximized 标记 */
-      iframe[src*="tawk.to"]:not(.is-chat-maximized),
-      iframe[title*="chat widget"]:not(.is-chat-maximized),
-      iframe[title*="tawk"]:not(.is-chat-maximized),
-      div[id*="tawk"]:not(.is-chat-maximized) {
+      /* 强制隐藏默认的小气泡图标/按钮，无论它怎么更新样式都不显示 */
+      iframe[src*="tawk.to"][title*="chat widget"],
+      iframe[src*="tawk.to"][title*="tawk"],
+      div[id*="tawk-bubble-container"],
+      div[class*="tawk-min-container"] {
         display: none !important;
         opacity: 0 !important;
         visibility: hidden !important;
         pointer-events: none !important;
-        width: 0 !important;
-        height: 0 !important;
-        position: fixed !important;
-        top: -9999px !important;
-        left: -9999px !important;
       }
 
-      /* 只有放大的聊天框才允许在主文档渲染 */
-      iframe.is-chat-maximized {
+      /* 当聊天框未展开时，隐藏它的外层容器（防止闪烁），但允许它后台正常加载 */
+      body:not(.tawk-chat-open) iframe[src*="tawk.to"]:not([style*="height: 100%"]):not([style*="height:100%"]) {
+        opacity: 0 !important;
+        pointer-events: none !important;
+      }
+
+      /* 用户点击展开后：解除一切限制，恢复原生的聊天交互 */
+      body.tawk-chat-open iframe[src*="tawk.to"] {
         display: block !important;
         opacity: 1 !important;
         visibility: visible !important;
         pointer-events: auto !important;
-      }
-
-      #tawk-shadow-sandbox {
-        display: none !important;
       }
     </style>
 
@@ -277,34 +274,9 @@
           right: -3px;
           box-shadow: 0 0 6px #10b981;
         }
-        
-        div[role="dialog"] {
-          margin-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
-          max-height: calc(100vh - 120px) !important;
-          max-width: 94vw !important;
-          box-sizing: border-box !important;
-        }
-
-        div[role="dialog"] > div {
-          max-height: calc(100vh - 140px) !important;
-          overflow-y: auto !important;
-          overflow-x: hidden !important;
-          box-sizing: border-box !important;
-        }
-
-        div[role="dialog"] * {
-          max-width: 100% !important;
-          box-sizing: border-box !important;
-          word-break: break-word !important;
-        }
-
-        div[role="dialog"] div[style*="width"] {
-          width: 100% !important;
-          min-width: 0 !important;
-        }
       }
 
-      /* 自定义客服悬浮球 */
+      /* 自定义客服悬浮球样式 */
       #mobile-tawk-widget {
         display: none;
       }
@@ -365,61 +337,13 @@
       })();
     </script>
 
-    <!-- 2. 底层 DOM API 劫持拦截（在 Tawk 运行前强行生效） -->
+    <!-- 2. 精准无侵入式 SDK 控制器（不破坏 DOM 挂载逻辑） -->
     <script type="text/javascript">
       var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
       Tawk_API.lang = 'en';
 
       var mobileTawkPositionKey = 'merdex-mobile-tawk-position';
 
-      /* 构建一个绝对隔离的 Shadow DOM 隔离舱 */
-      var sandboxHost = document.createElement('div');
-      sandboxHost.id = 'tawk-shadow-sandbox';
-      var shadowRoot = sandboxHost.attachShadow({ mode: 'closed' }); // 设为 closed 彻底禁止 Tawk 内部代码感知到它
-      
-      (document.head || document.documentElement).appendChild(sandboxHost);
-
-      /* 【黑科技】劫持 DOM 挂载函数：任何 Tawk 挂件在插入主页面的瞬时，被重定向抓进影子节点 */
-      var origAppendChild = Node.prototype.appendChild;
-      var origInsertBefore = Node.prototype.insertBefore;
-
-      function isTawkNode(node) {
-        if (!node || node.nodeType !== 1) return false;
-        var src = node.getAttribute('src') || '';
-        var title = node.getAttribute('title') || '';
-        var id = node.id || '';
-        return src.indexOf('tawk.to') !== -1 || title.indexOf('tawk') !== -1 || title.indexOf('chat widget') !== -1 || id.indexOf('tawk') !== -1;
-      }
-
-      function checkAndClassify(node) {
-        if (!isTawkNode(node)) return false;
-        var style = node.getAttribute('style') || '';
-        // 检测 Tawk 什么时候变身成为大聊天框
-        var isMaximized = style.indexOf('100%') !== -1 || style.indexOf('height: 5') !== -1 || style.indexOf('height: 6') !== -1;
-        if (isMaximized) {
-          node.classList.add('is-chat-maximized');
-          return false; // 放行回到主文档
-        } else {
-          node.classList.remove('is-chat-maximized');
-          return true; // 隔离丢进 Shadow DOM
-        }
-      }
-
-      Node.prototype.appendChild = function(child) {
-        if (checkAndClassify(child)) {
-          return origAppendChild.call(shadowRoot, child);
-        }
-        return origAppendChild.apply(this, arguments);
-      };
-
-      Node.prototype.insertBefore = function(newNode, referenceNode) {
-        if (checkAndClassify(newNode)) {
-          return origAppendChild.call(shadowRoot, newNode);
-        }
-        return origInsertBefore.apply(this, arguments);
-      };
-
-      /* 业务辅助函数 */
       function getMobileTawkWidget() {
         return document.getElementById('mobile-tawk-widget');
       }
@@ -452,6 +376,7 @@
       }
 
       function openMobileTawkChat() {
+        document.body.classList.add('tawk-chat-open');
         showMobileTawkWidget(false);
         if (typeof Tawk_API.maximize === 'function') {
           Tawk_API.maximize();
@@ -461,30 +386,43 @@
         }
       }
 
-      /* Tawk 事件回调处理 */
+      /* Tawk 状态同步回调 */
       Tawk_API.onBeforeLoad = forceHideNativeTawk;
+      
       Tawk_API.onLoad = function () {
         forceHideNativeTawk();
-        showMobileTawkWidget(true);
-        restoreMobileTawkPosition();
+        if (Tawk_API.isChatMaximized && Tawk_API.isChatMaximized()) {
+          document.body.classList.add('tawk-chat-open');
+          showMobileTawkWidget(false);
+        } else {
+          document.body.classList.remove('tawk-chat-open');
+          showMobileTawkWidget(true);
+          restoreMobileTawkPosition();
+        }
       };
+
       Tawk_API.onChatMaximized = function () {
+        document.body.classList.add('tawk-chat-open');
         showMobileTawkWidget(false);
       };
+
       Tawk_API.onChatMinimized = function () {
-        forceHideNativeTawk();
-        showMobileTawkWidget(true);
-        restoreMobileTawkPosition();
-      };
-      Tawk_API.onChatHidden = function () {
+        document.body.classList.remove('tawk-chat-open');
         forceHideNativeTawk();
         showMobileTawkWidget(true);
         restoreMobileTawkPosition();
       };
 
-      /* DOM 准备好后绑定事件与引入脚本 */
+      Tawk_API.onChatHidden = function () {
+        document.body.classList.remove('tawk-chat-open');
+        forceHideNativeTawk();
+        showMobileTawkWidget(true);
+        restoreMobileTawkPosition();
+      };
+
+      /* DOM 初始化 */
       document.addEventListener('DOMContentLoaded', function () {
-        // 动态加载 SDK 脚本
+        // 加载官方脚本
         var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
         s1.async = true;
         s1.src = 'https://embed.tawk.to/6a98b268451e133447599dcc/1k1l6h0rv';
