@@ -8,35 +8,6 @@
     <link rel="dns-prefetch" href="https://embed.tawk.to" />
     <link rel="preconnect" href="https://embed.tawk.to" crossorigin />
 
-    <script type="text/javascript">
-      var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
-      Tawk_API.lang = 'en';
-
-      // 在 embed 脚本执行前注册，避免原生浮标先渲染再隐藏。
-      function hideNativeTawkWidget() {
-        if (typeof Tawk_API.hideWidget === 'function') {
-          Tawk_API.hideWidget();
-        }
-      }
-
-      Tawk_API.onBeforeLoad = hideNativeTawkWidget;
-      Tawk_API.onLoad = hideNativeTawkWidget;
-      Tawk_API.onChatMinimized = hideNativeTawkWidget;
-
-      (function () {
-        var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
-        s1.async = true;
-        s1.src = 'https://embed.tawk.to/6a98b268451e133447599dcc/1k1l6h0rv';
-        s1.charset = 'UTF-8';
-        s1.setAttribute('crossorigin', '*');
-        if (s0 && s0.parentNode) {
-          s0.parentNode.insertBefore(s1, s0);
-        } else {
-          document.head.appendChild(s1);
-        }
-      })();
-    </script>
-
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#0d0e12" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -301,15 +272,19 @@
         }
       }
 
-      /* 隐藏 Tawk 原生小图标 iframe，保留自定义客服按钮和展开的聊天窗口。 */
+      /* 隐藏 Tawk 原生小图标 iframe，保留自定义客服按钮和展开的聊天窗口 */
       iframe[src="about:blank"][referrerpolicy="no-referrer-when-downgrade"][style*="max-width:124px"],
       iframe[src="about:blank"][referrerpolicy="no-referrer-when-downgrade"][style*="max-width: 124px"] {
         transform: translateX(200vw) !important;
         -webkit-transform: translateX(200vw) !important;
       }
 
-      /* Tawk 客服悬浮球：贴边定位且支持自由拖拽 */
+      /* Tawk 客服悬浮球：初始隐藏，响应 JS 控制显隐 */
       #mobile-tawk-widget {
+        display: none;
+      }
+
+      #mobile-tawk-widget.is-visible {
         align-items: center;
         background: #1595ad;
         border: 0;
@@ -337,7 +312,7 @@
       }
 
       @media (min-width: 1001px) {
-        #mobile-tawk-widget {
+        #mobile-tawk-widget.is-visible {
           bottom: 30px;
           right: 20px;
         }
@@ -366,24 +341,39 @@
     </script>
 
     <script type="text/javascript">
+      var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
+      Tawk_API.lang = 'en';
       var mobileTawkPositionKey = 'merdex-mobile-tawk-position';
+
+      function isMobileTawkScreen() {
+        return true;
+      }
 
       function getMobileTawkWidget() {
         return document.getElementById('mobile-tawk-widget');
       }
 
-      function clampMobileTawkPosition() {
+      function showMobileTawkWidget(visible) {
         var widget = getMobileTawkWidget();
-        if (!widget) return;
+        if (widget) widget.classList.toggle('is-visible', visible && isMobileTawkScreen());
+      }
+
+      function hideNativeTawkWidget() {
+        if (typeof Tawk_API.hideWidget === 'function') {
+          Tawk_API.hideWidget();
+        }
+      }
+
+      function clampMobileTawkWidget() {
+        var widget = getMobileTawkWidget();
+        if (!widget || !widget.classList.contains('is-visible')) return;
         var rect = widget.getBoundingClientRect();
         var left = Math.max(0, Math.min(rect.left, window.innerWidth - rect.width));
         var top = Math.max(0, Math.min(rect.top, window.innerHeight - rect.height));
-        if (left !== rect.left || top !== rect.top) {
-          widget.style.left = left + 'px';
-          widget.style.top = top + 'px';
-          widget.style.right = 'auto';
-          widget.style.bottom = 'auto';
-        }
+        widget.style.left = left + 'px';
+        widget.style.top = top + 'px';
+        widget.style.right = 'auto';
+        widget.style.bottom = 'auto';
       }
 
       function restoreMobileTawkPosition() {
@@ -398,10 +388,21 @@
             widget.style.bottom = 'auto';
           }
         } catch (error) { }
-        clampMobileTawkPosition();
+        requestAnimationFrame(clampMobileTawkWidget);
+      }
+
+      function syncMobileTawkWidget() {
+        var maximized = typeof Tawk_API.isChatMaximized === 'function' && Tawk_API.isChatMaximized();
+        if (maximized) {
+          showMobileTawkWidget(false);
+        } else {
+          showMobileTawkWidget(true);
+          restoreMobileTawkPosition();
+        }
       }
 
       function openMobileTawkChat() {
+        showMobileTawkWidget(false);
         if (typeof Tawk_API.maximize === 'function') {
           Tawk_API.maximize();
         } else if (typeof Tawk_API.start === 'function') {
@@ -409,15 +410,39 @@
         }
       }
 
-      window.addEventListener('resize', clampMobileTawkPosition);
+      /* Tawk 生命周期及防闪烁逻辑 */
+      Tawk_API.onBeforeLoad = hideNativeTawkWidget;
+
+      Tawk_API.onLoad = function () {
+        hideNativeTawkWidget();
+        syncMobileTawkWidget();
+      };
+
+      Tawk_API.onChatMaximized = function () {
+        showMobileTawkWidget(false);
+      };
+
+      Tawk_API.onChatMinimized = function () {
+        hideNativeTawkWidget();
+        showMobileTawkWidget(true);
+        restoreMobileTawkPosition();
+      };
+
+      Tawk_API.onChatHidden = function () {
+        hideNativeTawkWidget();
+        showMobileTawkWidget(true);
+        restoreMobileTawkPosition();
+      };
+
+      window.addEventListener('resize', syncMobileTawkWidget);
 
       document.addEventListener('DOMContentLoaded', function () {
-        restoreMobileTawkPosition();
-
         var widget = getMobileTawkWidget();
         var drag = null;
 
         if (!widget) return;
+
+        syncMobileTawkWidget();
 
         widget.addEventListener('pointerdown', function (event) {
           var rect = widget.getBoundingClientRect();
@@ -473,6 +498,19 @@
           if (event.detail === 0) openMobileTawkChat();
         });
       });
+
+      (function () {
+        var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
+        s1.async = true;
+        s1.src = 'https://embed.tawk.to/6a98b268451e133447599dcc/1k1l6h0rv';
+        s1.charset = 'UTF-8';
+        s1.setAttribute('crossorigin', '*');
+        if (s0 && s0.parentNode) {
+          s0.parentNode.insertBefore(s1, s0);
+        } else {
+          document.head.appendChild(s1);
+        }
+      })();
     </script>
   </head>
   <body>
