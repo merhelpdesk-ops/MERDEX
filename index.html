@@ -3,9 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     
-    <!-- 1. 终极强压 CSS：结合负轴位移 + 强制隐形 + transition 阻断 -->
     <style id="tawk-anti-flicker-style">
-      /* 永远封锁 Tawk 官方的原生悬浮气泡/小按钮 */
       iframe[src*="tawk.to"][title*="chat widget"],
       iframe[src*="tawk.to"][title*="tawk"],
       div[id*="tawk-bubble-container"],
@@ -17,7 +15,6 @@
         transform: translate3d(-9999px, -9999px, 0) !important;
       }
 
-      /* 未展开状态：硬干位移 + 隐藏，避免任何内联 Style 绕过 */
       body:not(.tawk-chat-open) iframe[src*="tawk.to"],
       body:not(.tawk-chat-open) div[id*="tawk"] {
         display: none !important;
@@ -28,7 +25,6 @@
         transition: none !important;
       }
 
-      /* 展开状态下：毫秒级精准解封大窗 */
       body.tawk-chat-open iframe[src*="tawk.to"] {
         display: block !important;
         opacity: 1 !important;
@@ -37,6 +33,26 @@
         transform: none !important;
       }
     </style>
+
+    <script type="text/javascript">
+      (function interceptTawkDomInsertion() {
+        const origAppendChild = Element.prototype.appendChild;
+        Element.prototype.appendChild = function (child) {
+          if (child && child.tagName) {
+            const isTawkIframe = child.tagName === 'IFRAME' && child.src && child.src.indexOf('tawk.to') !== -1;
+            const isTawkDiv = (child.id && child.id.indexOf('tawk') !== -1) || (child.className && typeof child.className === 'string' && child.className.indexOf('tawk') !== -1);
+            
+            if ((isTawkIframe || isTawkDiv) && !document.body.classList.contains('tawk-chat-open')) {
+              child.style.setProperty('display', 'none', 'important');
+              child.style.setProperty('opacity', '0', 'important');
+              child.style.setProperty('visibility', 'hidden', 'important');
+              child.style.setProperty('transform', 'translate3d(-9999px, -9999px, 0)', 'important');
+            }
+          }
+          return origAppendChild.apply(this, arguments);
+        };
+      })();
+    </script>
 
     <link rel="icon" type="image/webp" href="/favicon.webp" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -283,7 +299,6 @@
         }
       }
 
-      /* 自定义客服悬浮球样式 */
       #mobile-tawk-widget {
         display: none;
       }
@@ -344,7 +359,6 @@
       })();
     </script>
 
-    <!-- 2. 精准无侵入式 SDK 控制器与 Mutation 防御 -->
     <script type="text/javascript">
       var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
       Tawk_API.lang = 'en';
@@ -383,7 +397,6 @@
       }
 
       function openMobileTawkChat() {
-        document.body.classList.add('tawk-chat-open');
         showMobileTawkWidget(false);
         if (typeof Tawk_API.maximize === 'function') {
           Tawk_API.maximize();
@@ -391,9 +404,11 @@
           Tawk_API.start();
           if (typeof Tawk_API.maximize === 'function') Tawk_API.maximize();
         }
+        requestAnimationFrame(function() {
+          document.body.classList.add('tawk-chat-open');
+        });
       }
 
-      /* Tawk 状态同步回调 */
       Tawk_API.onBeforeLoad = forceHideNativeTawk;
       
       Tawk_API.onLoad = function () {
@@ -427,7 +442,6 @@
         restoreMobileTawkPosition();
       };
 
-      /* 全局 DOM 属性拦截器：任何针对 Tawk iframe 的 Style 强行写入都会在未展开时被制裁 */
       (function setupDOMAntiFlickerGuard() {
         const observer = new MutationObserver((mutations) => {
           if (document.body.classList.contains('tawk-chat-open')) return;
@@ -439,6 +453,7 @@
                   target.style.setProperty('display', 'none', 'important');
                   target.style.setProperty('opacity', '0', 'important');
                   target.style.setProperty('visibility', 'hidden', 'important');
+                  target.style.setProperty('transform', 'translate3d(-9999px, -9999px, 0)', 'important');
                 }
               }
             }
@@ -454,7 +469,6 @@
         });
       })();
 
-      /* DOM 初始化 */
       document.addEventListener('DOMContentLoaded', function () {
         var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
         s1.async = true;
