@@ -6,7 +6,7 @@
     <style id="tawk-anti-flicker-style">
       iframe[src*="tawk.to"][title*="chat widget"],
       iframe[src*="tawk.to"][title*="tawk"],
-      div[id*="tawk-bubble-container"],
+      div[id^="tawk-bubble"],
       div[class*="tawk-min-container"] {
         display: none !important;
         opacity: 0 !important;
@@ -16,7 +16,8 @@
       }
 
       body:not(.tawk-chat-open) iframe[src*="tawk.to"],
-      body:not(.tawk-chat-open) div[id*="tawk"] {
+      body:not(.tawk-chat-open) div[id^="tawk-widget"],
+      body:not(.tawk-chat-open) div[class^="tawk-"] {
         display: none !important;
         opacity: 0 !important;
         visibility: hidden !important;
@@ -40,7 +41,7 @@
         Element.prototype.appendChild = function (child) {
           if (child && child.tagName) {
             const isTawkIframe = child.tagName === 'IFRAME' && child.src && child.src.indexOf('tawk.to') !== -1;
-            const isTawkDiv = (child.id && child.id.indexOf('tawk') !== -1) || (child.className && typeof child.className === 'string' && child.className.indexOf('tawk') !== -1);
+            const isTawkDiv = (child.id && child.id.indexOf('tawk-') === 0) || (child.className && typeof child.className === 'string' && child.className.indexOf('tawk-') === 0);
             
             if ((isTawkIframe || isTawkDiv) && !document.body.classList.contains('tawk-chat-open')) {
               child.style.setProperty('display', 'none', 'important');
@@ -337,27 +338,6 @@
         }
       }
     </style>
-
-    <script>
-      (function hideSpecificTabs() {
-        const observer = new MutationObserver(() => {
-          const root = document.getElementById('root');
-          if (root) {
-            const elements = root.querySelectorAll('button, div');
-            elements.forEach(el => {
-              const txt = (el.innerText || '').trim();
-              if ((txt === 'Swap' || txt === 'Perps') && el.children.length === 0) {
-                let parent = el.parentElement;
-                if (parent && parent.innerText.includes('Swap') && parent.innerText.includes('Perps') && !parent.innerText.includes('Connect')) {
-                  parent.style.display = 'none';
-                }
-              }
-            });
-          }
-        });
-        observer.observe(document, { childList: true, subtree: true });
-      })();
-    </script>
 
     <script type="text/javascript">
       var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
