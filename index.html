@@ -5,25 +5,24 @@
     <link rel="icon" type="image/webp" href="/favicon.webp" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 
-    <!-- 1. 强力抹杀 Tawk 原生所有 UI（包括弹出的聊天主窗口、底部 Powered by 标识等） -->
+    <!-- 1. 样式拦截：全面隐藏所有相关 iframe 与全局容器 -->
     <style>
-      /* 强制将所有属于 tawk 的组件归零，阻止其获取渲染空间 */
       iframe[title*="chat widget"],
       iframe[src*="tawk.to"],
       div[id*="tawk"],
       .tawk-min-container,
-      .tawk-max-container {
+      .tawk-max-container,
+      .tawk-card,
+      .tawk-button {
         display: none !important;
         opacity: 0 !important;
         visibility: hidden !important;
         pointer-events: none !important;
         width: 0 !important;
         height: 0 !important;
-        max-width: 0 !important;
-        max-height: 0 !important;
-        position: fixed !important;
-        top: -9999px !important;
+        position: absolute !important;
         left: -9999px !important;
+        top: -9999px !important;
         z-index: -9999 !important;
       }
     </style>
@@ -308,6 +307,18 @@
         word-break: break-word;
       }
 
+      .msg-bubble img {
+        max-width: 100%;
+        border-radius: 8px;
+        margin-top: 4px;
+        display: block;
+      }
+
+      .msg-bubble a {
+        color: var(--text-active);
+        text-decoration: underline;
+      }
+
       .msg-row.user .msg-bubble {
         background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
         color: #0d0e12;
@@ -428,26 +439,64 @@
       }
     </style>
 
-    <!-- 2. 通信与静默拦截机制 -->
+    <!-- 2. 隐藏与完美通信机制 -->
     <script type="text/javascript">
       var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
       Tawk_API.lang = 'en';
 
-      // 渲染消息至自定义窗口
-      function appendMessage(sender, text) {
+      // 强力隐藏 DOM
+      function hideTawkDOM() {
+        if (typeof Tawk_API.hideWidget === 'function') {
+          Tawk_API.hideWidget();
+        }
+        var elements = document.querySelectorAll('iframe[src*="tawk.to"], div[id*="tawk"]');
+        elements.forEach(function (el) {
+          el.style.setProperty('display', 'none', 'important');
+          el.style.setProperty('opacity', '0', 'important');
+          el.style.setProperty('visibility', 'hidden', 'important');
+        });
+      }
+
+      // 实时 DOM 监听（防止原生小工具弹出）
+      var observer = new MutationObserver(function (mutations) {
+        mutations.forEach(function (mutation) {
+          if (mutation.addedNodes.length) {
+            hideTawkDOM();
+          }
+        });
+      });
+      observer.observe(document.documentElement, { childList: true, subtree: true });
+
+      // 安全渲染消息（防 XSS，但支持 HTML 解析，如图片/链接）
+      function appendMessage(sender, rawContent, dateObj) {
         const msgContainer = document.getElementById('chat-messages');
         if (!msgContainer) return;
+
+        let contentHtml = '';
+        if (typeof rawContent === 'string') {
+          contentHtml = rawContent;
+        } else if (typeof rawContent === 'object' && rawContent !== null) {
+          contentHtml = rawContent.message || rawContent.text || '';
+        }
+
+        if (!contentHtml) return;
 
         const row = document.createElement('div');
         row.className = `msg-row ${sender}`;
 
         const bubble = document.createElement('div');
         bubble.className = 'msg-bubble';
-        bubble.textContent = text;
+        
+        // 如果包含 HTML 标签（如图片，链接），使用 innerHTML，否则使用 textContent 防注入
+        if (/<[a-z][\s\S]*>/i.test(contentHtml)) {
+          bubble.innerHTML = contentHtml;
+        } else {
+          bubble.textContent = contentHtml;
+        }
 
         const time = document.createElement('div');
         time.className = 'msg-time';
-        const now = new Date();
+        const now = dateObj ? new Date(dateObj) : new Date();
         time.textContent = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
 
         row.appendChild(bubble);
@@ -457,17 +506,75 @@
         msgContainer.scrollTop = msgContainer.scrollHeight;
       }
 
+      // 初始化历史记录拉取
+      function loadChatHistory() {
+        if (typeof Tawk_API.getHistory === 'function') {
+          var history = Tawk_API.getHistory();
+          if (history && history.length > 0) {
+            const msgContainer = document.getElementById('chat-messages');
+            if (msgContainer) msgContainer.innerHTML = ''; // 清除默认欢迎语，使用真实历史
+            
+            history.forEach(function (msg) {
+              var sender = (msg.publisher === 'agent' || msg.type === 'agent') ? 'agent' : 'user';
+              appendMessage(sender, msg.message, msg.date);
+            });
+          }
+        }
+      }
+
+      // Tawk 核心初始化生命周期
+      Tawk_API.onLoad = function () {
+        hideTawkDOM();
+        loadChatHistory();
+      };
+
+      // 接收来自客服端的消息
+      Tawk_API.onChatMessageAgent = function(message) {
+        appendMessage('agent', message);
+
+        const win = document.getElementById('merdex-chat-window');
+        if (win && !win.classList.contains('open')) {
+          const badge = document.getElementById('chat-unread-badge');
+          if (badge) badge.classList.add('active');
+        }
+      };
+
+      // 接收访客多端/同步消息
+      Tawk_API.onChatMessageVisitor = function(message) {
+        // 如果是在其他标签页发出的消息，也会被完美同步
+        const input = document.getElementById('chat-input-field');
+        if (input && input.value !== '') return; // 过滤当前页面刚发送过的消息
+      };
+
+      // 未读消息数变动通知
+      Tawk_API.onUnreadCountChanged = function(count) {
+        const badge = document.getElementById('chat-unread-badge');
+        if (badge) {
+          if (count > 0) {
+            badge.classList.add('active');
+          } else {
+            badge.classList.remove('active');
+          }
+        }
+      };
+
       // 显隐面板控制
       function toggleCustomChat() {
         const win = document.getElementById('merdex-chat-window');
         if (win) {
           win.classList.toggle('open');
           const badge = document.getElementById('chat-unread-badge');
-          if (badge) badge.classList.remove('active');
+          if (badge && win.classList.contains('open')) {
+            badge.classList.remove('active');
+            // 清除 Tawk 未读状态
+            if (typeof Tawk_API.minimize === 'function') {
+              Tawk_API.minimize();
+            }
+          }
         }
       }
 
-      // 静默推送消息至 Tawk
+      // 发送消息
       function handleSendMessage() {
         const input = document.getElementById('chat-input-field');
         const text = input.value.trim();
@@ -476,89 +583,16 @@
         appendMessage('user', text);
         input.value = '';
 
-        // 直接向 Tawk iframe 填值，避免触发接口的展开方法
-        setTimeout(() => {
-          try {
-            const iframes = document.querySelectorAll('iframe');
-            let sent = false;
-
-            iframes.forEach((iframe) => {
-              try {
-                const doc = iframe.contentDocument || iframe.contentWindow.document;
-                const textarea = doc.querySelector('textarea, input[type="text"]');
-                if (textarea) {
-                  textarea.value = text;
-                  textarea.dispatchEvent(new Event('input', { bubbles: true }));
-                  
-                  const enterEvent = new KeyboardEvent('keydown', {
-                    bubbles: true,
-                    cancelable: true,
-                    keyCode: 13,
-                    which: 13,
-                    key: 'Enter'
-                  });
-                  textarea.dispatchEvent(enterEvent);
-                  sent = true;
-                }
-              } catch (e) {}
-            });
-
-            if (!sent && typeof Tawk_API.sendMessage === 'function') {
-              Tawk_API.sendMessage(text);
+        if (typeof Tawk_API.sendMessage === 'function') {
+          Tawk_API.sendMessage(text, function(error) {
+            if (error) {
+              console.error('Failed to send message via Tawk:', error);
             }
-          } catch (err) {
-            console.error('Send message failed:', err);
-          }
-        }, 50);
+          });
+        }
       }
 
-      /* 定时与事件监听双重隐藏原生组件 */
-      function killNativeTawkUI() {
-        if (typeof Tawk_API.hideWidget === 'function') {
-          Tawk_API.hideWidget();
-        }
-        if (typeof Tawk_API.minimize === 'function') {
-          Tawk_API.minimize();
-        }
-        
-        // 抓取并隐藏动态创出的 DOM 容器
-        const tawkElements = document.querySelectorAll('iframe[src*="tawk.to"], div[id*="tawk"]');
-        tawkElements.forEach((el) => {
-          el.style.setProperty('display', 'none', 'important');
-          el.style.setProperty('opacity', '0', 'important');
-          el.style.setProperty('visibility', 'hidden', 'important');
-          el.style.setProperty('pointer-events', 'none', 'important');
-        });
-      }
-
-      Tawk_API.onLoad = function () {
-        killNativeTawkUI();
-        // 持续轮询拦截 Tawk 自动弹窗
-        setInterval(killNativeTawkUI, 300);
-      };
-
-      // 接收来自客服端的消息
-      Tawk_API.onChatMessageAgent = function(message) {
-        var msgText = typeof message === 'string' ? message : (message.message || message.text);
-        if (msgText) {
-          appendMessage('agent', msgText);
-
-          const win = document.getElementById('merdex-chat-window');
-          if (win && !win.classList.contains('open')) {
-            const badge = document.getElementById('chat-unread-badge');
-            if (badge) badge.classList.add('active');
-          }
-        }
-      };
-
-      Tawk_API.onUnreadCountChanged = function(count) {
-        const badge = document.getElementById('chat-unread-badge');
-        if (badge && count > 0) {
-          badge.classList.add('active');
-        }
-      };
-
-      // 悬浮球移动与点击
+      // 悬浮球拖拽与点击绑定
       document.addEventListener('DOMContentLoaded', function () {
         var widget = document.getElementById('custom-chat-trigger');
         if (!widget) return;
@@ -664,7 +698,7 @@
     <div id="custom-chat-trigger" role="button" aria-label="Customer Support">
       <span id="chat-unread-badge" class="chat-badge"></span>
       <svg viewBox="0 0 24 24">
-        <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+        <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
       </svg>
     </div>
 
