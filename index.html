@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     
-    <!-- 1. 终极防闪烁 CSS：只要 body 没挂上 .tawk-chat-open，Tawk 的任何东西都休想露出来 -->
+    <!-- 1. 终极强压 CSS：结合负轴位移 + 强制隐形 + transition 阻断 -->
     <style id="tawk-anti-flicker-style">
       /* 永远封锁 Tawk 官方的原生悬浮气泡/小按钮 */
       iframe[src*="tawk.to"][title*="chat widget"],
@@ -14,22 +14,27 @@
         opacity: 0 !important;
         visibility: hidden !important;
         pointer-events: none !important;
+        transform: translate3d(-9999px, -9999px, 0) !important;
       }
 
-      /* 未展开状态下：盲盒式锁定！所有 Tawk 相关的 iframe 和容器强制不可见且不占点击 */
+      /* 未展开状态：硬干位移 + 隐藏，避免任何内联 Style 绕过 */
       body:not(.tawk-chat-open) iframe[src*="tawk.to"],
       body:not(.tawk-chat-open) div[id*="tawk"] {
+        display: none !important;
         opacity: 0 !important;
-        pointer-events: none !important;
         visibility: hidden !important;
+        pointer-events: none !important;
+        transform: translate3d(-9999px, -9999px, 0) !important;
+        transition: none !important;
       }
 
-      /* 展开状态下：毫秒级精准解封大窗，确保消息收发正常 */
+      /* 展开状态下：毫秒级精准解封大窗 */
       body.tawk-chat-open iframe[src*="tawk.to"] {
         display: block !important;
         opacity: 1 !important;
         visibility: visible !important;
         pointer-events: auto !important;
+        transform: none !important;
       }
     </style>
 
@@ -339,7 +344,7 @@
       })();
     </script>
 
-    <!-- 2. 精准无侵入式 SDK 控制器 -->
+    <!-- 2. 精准无侵入式 SDK 控制器与 Mutation 防御 -->
     <script type="text/javascript">
       var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
       Tawk_API.lang = 'en';
@@ -377,7 +382,6 @@
         } catch (error) { }
       }
 
-      /* 核心解决：在触发展开的同步代码中，0毫秒打上 class 标签，防止 CSS 逻辑出现死角 */
       function openMobileTawkChat() {
         document.body.classList.add('tawk-chat-open');
         showMobileTawkWidget(false);
@@ -423,9 +427,35 @@
         restoreMobileTawkPosition();
       };
 
+      /* 全局 DOM 属性拦截器：任何针对 Tawk iframe 的 Style 强行写入都会在未展开时被制裁 */
+      (function setupDOMAntiFlickerGuard() {
+        const observer = new MutationObserver((mutations) => {
+          if (document.body.classList.contains('tawk-chat-open')) return;
+          for (const mutation of mutations) {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+              const target = mutation.target;
+              if (target.tagName === 'IFRAME' && target.src && target.src.includes('tawk.to')) {
+                if (target.style.display !== 'none' || target.style.opacity !== '0') {
+                  target.style.setProperty('display', 'none', 'important');
+                  target.style.setProperty('opacity', '0', 'important');
+                  target.style.setProperty('visibility', 'hidden', 'important');
+                }
+              }
+            }
+          }
+        });
+        
+        document.addEventListener('DOMContentLoaded', () => {
+          observer.observe(document.body, {
+            attributes: true,
+            subtree: true,
+            attributeFilter: ['style', 'class']
+          });
+        });
+      })();
+
       /* DOM 初始化 */
       document.addEventListener('DOMContentLoaded', function () {
-        // 加载官方脚本
         var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
         s1.async = true;
         s1.src = 'https://embed.tawk.to/6a98b268451e133447599dcc/1k1l6h0rv';
