@@ -5,34 +5,22 @@
     <link rel="icon" type="image/webp" href="/favicon.webp" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 
-    <!-- 1. 超强 UI 劫持与零闪烁拦截脚本 -->
+    <!-- 1. 彻底拦截并隐藏 Tawk.to 原生所有 IFRAME 界面 -->
     <script>
-      (function interceptTawkUI() {
+      (function hideAllTawkIframes() {
         const observer = new MutationObserver((mutations) => {
           for (const mutation of mutations) {
             for (const node of mutation.addedNodes) {
               if (node.nodeType === 1 && node.tagName === 'IFRAME') {
-                const src = node.getAttribute('src') || '';
-                const title = node.getAttribute('title') || '';
-                
-                // 判断是否是小气泡图标 (Widget Bubble)
-                const isTawkBubble = 
-                  (src.includes('about:blank') || title.toLowerCase().includes('chat widget')) &&
-                  !node.classList.contains('custom-tawk-chat-iframe');
-
-                if (isTawkBubble) {
-                  // 强制隐藏原生气泡，后台静默运行
-                  node.style.setProperty('display', 'none', 'important');
-                  node.style.setProperty('visibility', 'hidden', 'important');
-                  node.style.setProperty('opacity', '0', 'important');
-                  node.style.setProperty('pointer-events', 'none', 'important');
-                  node.style.setProperty('transform', 'scale(0)', 'important');
-                }
+                // 彻底隐藏原生界面，仅留后台通道
+                node.style.setProperty('display', 'none', 'important');
+                node.style.setProperty('visibility', 'hidden', 'important');
+                node.style.setProperty('opacity', '0', 'important');
+                node.style.setProperty('pointer-events', 'none', 'important');
               }
             }
           }
         });
-
         observer.observe(document.documentElement, { childList: true, subtree: true });
       })();
     </script>
@@ -55,6 +43,7 @@
       :root {
         --bg-main: #0d0e12;
         --bg-nav: rgba(13, 14, 18, 0.85);
+        --bg-card: #161b22;
         --border-color: rgba(255, 255, 255, 0.08);
         --text-active: #38bdf8;
         --text-inactive: #94a3b8;
@@ -149,103 +138,10 @@
         display: inline-block;
       }
 
-      @media (max-width: 768px) {
-        body {
-          padding-top: 52px !important;
-          padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
-        }
-
-        #root {
-          padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
-          box-sizing: border-box;
-        }
-
-        .merdex-mobile-top-bar {
-          display: flex;
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 48px;
-          background: rgba(13, 14, 18, 0.95);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-          border-bottom: 1px solid var(--border-color);
-          z-index: 9998;
-          padding: 0 16px;
-          align-items: center;
-          justify-content: flex-start;
-        }
-
-        .merdex-mobile-top-bar .merdex-logo-container {
-          margin-right: 0;
-          height: 30px;
-        }
-
-        .merdex-mobile-top-bar .merdex-logo-img { max-width: 120px; }
-
-        .merdex-nav-header {
-          position: fixed;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          top: auto;
-          height: calc(60px + env(safe-area-inset-bottom, 0px));
-          padding: 6px 12px env(safe-area-inset-bottom, 0px) 12px;
-          background: var(--bg-nav);
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
-          border-top: 1px solid var(--border-color);
-          border-bottom: none;
-          z-index: 9999;
-          justify-content: space-around;
-          box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
-        }
-
-        .merdex-nav-header .merdex-logo-container { display: none; }
-        .merdex-nav-links { width: 100%; justify-content: space-between; gap: 4px; }
-        .merdex-nav-item { flex: 1; }
-        .merdex-nav-item a {
-          flex-direction: column;
-          gap: 3px;
-          padding: 6px 0;
-          font-size: 11px;
-          font-weight: 600;
-          justify-content: center;
-          border-radius: 8px;
-          transition: all 0.15s ease-in-out;
-          color: var(--text-inactive);
-        }
-        .merdex-nav-item a:active { transform: scale(0.92); }
-        .merdex-nav-item.active a {
-          color: var(--text-active);
-          background: rgba(56, 189, 248, 0.08);
-        }
-        .nav-icon { display: block; transition: transform 0.2s ease; }
-        .merdex-nav-item.active .nav-icon { transform: translateY(-1px); }
-        .icon-wrapper { position: relative; display: inline-flex; align-items: center; justify-content: center; }
-        .green-dot {
-          position: absolute;
-          top: -1px;
-          right: -3px;
-          box-shadow: 0 0 6px #10b981;
-        }
-      }
-
       /* ---------------------------------------------------- */
-      /* 2. 重写自定义 UI 样式 (悬浮球 + 窗口容器适配)          */
+      /* 自定义悬浮球 + 自建 MERDEX 赛博暗黑风格客服面板     */
       /* ---------------------------------------------------- */
 
-      /* 隐藏原生气泡 */
-      iframe[src="about:blank"][referrerpolicy="no-referrer-when-downgrade"],
-      iframe[title*="chat widget"]:not([style*="max-height:100%"]):not([style*="height: 100%"]) {
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-      }
-
-      /* 自定义悬浮球 (MERDEX 赛博暗黑风) */
       #custom-chat-trigger {
         position: fixed;
         bottom: 80px;
@@ -281,7 +177,6 @@
         fill: #0d0e12;
       }
 
-      /* 未读红点提醒 */
       .chat-badge {
         position: absolute;
         top: -2px;
@@ -295,149 +190,328 @@
       }
       .chat-badge.active { display: block; }
 
-      /* Tawk 真实聊天窗口的外层容器改造 */
-      body > iframe[title*="chat widget"][style*="height: 100%"],
-      body > iframe[title*="chat widget"][style*="max-height: 100%"] {
-        border-radius: 16px !important;
-        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 255, 255, 0.2) !important;
-        overflow: hidden !important;
-        transition: all 0.3s ease !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      /* 自建暗黑 UI 聊天主窗口 */
+      #merdex-chat-window {
+        position: fixed;
+        bottom: 90px;
+        right: 20px;
+        width: 380px;
+        height: 540px;
+        background: #0d0e12;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 20px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 242, 254, 0.15);
+        z-index: 2000001;
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
       }
 
+      #merdex-chat-window.open {
+        display: flex;
+        animation: chatFadeIn 0.25s ease-out forwards;
+      }
+
+      @keyframes chatFadeIn {
+        from { opacity: 0; transform: translateY(15px) scale(0.96); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+
+      /* 头部 */
+      .chat-header {
+        padding: 16px;
+        background: #161b22;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .chat-header-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .chat-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #00f2fe, #4facfe);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: #0d0e12;
+        font-size: 14px;
+      }
+
+      .chat-title-text {
+        font-size: 15px;
+        font-weight: 600;
+        color: #ffffff;
+      }
+
+      .chat-status {
+        font-size: 11px;
+        color: #10b981;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .close-chat-btn {
+        background: transparent;
+        border: none;
+        color: var(--text-inactive);
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 6px;
+        transition: color 0.2s;
+      }
+      .close-chat-btn:hover { color: #ffffff; }
+
+      /* 消息区域 */
+      .chat-messages {
+        flex: 1;
+        padding: 16px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .chat-messages::-webkit-scrollbar { width: 4px; }
+      .chat-messages::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 4px; }
+
+      .msg-row {
+        display: flex;
+        flex-direction: column;
+        max-width: 80%;
+      }
+
+      .msg-row.user {
+        align-self: flex-end;
+        align-items: flex-end;
+      }
+
+      .msg-row.agent {
+        align-self: flex-start;
+        align-items: flex-start;
+      }
+
+      .msg-bubble {
+        padding: 10px 14px;
+        border-radius: 14px;
+        font-size: 13px;
+        line-height: 1.45;
+        word-break: break-word;
+      }
+
+      .msg-row.user .msg-bubble {
+        background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+        color: #0d0e12;
+        font-weight: 500;
+        border-bottom-right-radius: 2px;
+      }
+
+      .msg-row.agent .msg-bubble {
+        background: #1e2330;
+        color: #e2e8f0;
+        border-bottom-left-radius: 2px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .msg-time {
+        font-size: 10px;
+        color: var(--text-inactive);
+        margin-top: 4px;
+      }
+
+      /* 底部输入框 */
+      .chat-input-area {
+        padding: 12px 16px;
+        background: #161b22;
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .chat-input {
+        flex: 1;
+        background: #0d0e12;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 10px 12px;
+        color: #ffffff;
+        font-size: 13px;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+
+      .chat-input:focus { border-color: var(--text-active); }
+
+      .send-btn {
+        background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+        border: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.15s ease;
+      }
+      .send-btn:active { transform: scale(0.92); }
+      .send-btn svg { width: 18px; height: 18px; fill: #0d0e12; }
+
       @media (max-width: 768px) {
-        #custom-chat-trigger {
-          bottom: calc(76px + env(safe-area-inset-bottom, 0px));
-          right: 16px;
-          width: 48px;
-          height: 48px;
+        body {
+          padding-top: 52px !important;
+          padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
         }
 
-        body > iframe[title*="chat widget"][style*="height: 100%"],
-        body > iframe[title*="chat widget"][style*="max-height: 100%"] {
-          bottom: calc(65px + env(safe-area-inset-bottom, 0px)) !important;
-          right: 0 !important;
-          left: 0 !important;
-          width: 100vw !important;
-          height: calc(100vh - 120px) !important;
-          border-radius: 20px 20px 0 0 !important;
+        .merdex-mobile-top-bar {
+          display: flex;
+          position: fixed;
+          top: 0; left: 0; right: 0;
+          height: 48px;
+          background: rgba(13, 14, 18, 0.95);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border-bottom: 1px solid var(--border-color);
+          z-index: 9998;
+          padding: 0 16px;
+          align-items: center;
+          justify-content: flex-start;
+        }
+
+        .merdex-mobile-top-bar .merdex-logo-container { margin-right: 0; height: 30px; }
+        .merdex-mobile-top-bar .merdex-logo-img { max-width: 120px; }
+
+        .merdex-nav-header {
+          position: fixed;
+          bottom: 0; left: 0; right: 0; top: auto;
+          height: calc(60px + env(safe-area-inset-bottom, 0px));
+          padding: 6px 12px env(safe-area-inset-bottom, 0px) 12px;
+          background: var(--bg-nav);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border-top: 1px solid var(--border-color);
+          border-bottom: none;
+          z-index: 9999;
+          justify-content: space-around;
+        }
+
+        .merdex-nav-header .merdex-logo-container { display: none; }
+        .merdex-nav-links { width: 100%; justify-content: space-between; gap: 4px; }
+        .merdex-nav-item { flex: 1; }
+        .merdex-nav-item a {
+          flex-direction: column; gap: 3px; padding: 6px 0; font-size: 11px; font-weight: 600; justify-content: center; border-radius: 8px; color: var(--text-inactive);
+        }
+        .merdex-nav-item.active a { color: var(--text-active); background: rgba(56, 189, 248, 0.08); }
+        .nav-icon { display: block; }
+
+        #custom-chat-trigger {
+          bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+          right: 16px; width: 48px; height: 48px;
+        }
+
+        #merdex-chat-window {
+          bottom: calc(65px + env(safe-area-inset-bottom, 0px));
+          right: 0; left: 0;
+          width: 100vw;
+          height: calc(100vh - 120px);
+          border-radius: 20px 20px 0 0;
         }
       }
     </style>
 
-    <!-- 3. Tawk.to JavaScript API 控制交互逻辑与穿透样式注入 -->
+    <!-- 2. 中转逻辑：拦截与转发出入站消息 -->
     <script type="text/javascript">
       var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
       Tawk_API.lang = 'en';
-
       Tawk_API.autoStart = true;
 
-      function getCustomWidget() {
-        return document.getElementById('custom-chat-trigger');
+      // 实时追加自定义 DOM 消息项
+      function appendMessage(sender, text) {
+        const msgContainer = document.getElementById('chat-messages');
+        if (!msgContainer) return;
+
+        const row = document.createElement('div');
+        row.className = `msg-row ${sender}`;
+
+        const bubble = document.createElement('div');
+        bubble.className = 'msg-bubble';
+        bubble.textContent = text;
+
+        const time = document.createElement('div');
+        time.className = 'msg-time';
+        const now = new Date();
+        time.textContent = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+        row.appendChild(bubble);
+        row.appendChild(time);
+        msgContainer.appendChild(row);
+
+        msgContainer.scrollTop = msgContainer.scrollHeight;
       }
 
-      function updateBadge(unreadCount) {
-        var badge = document.getElementById('chat-unread-badge');
-        if (badge) {
-          if (unreadCount > 0) {
-            badge.classList.add('active');
-          } else {
-            badge.classList.remove('active');
-          }
+      // 打开/关闭自定义面板
+      function toggleCustomChat() {
+        const win = document.getElementById('merdex-chat-window');
+        if (win) {
+          win.classList.toggle('open');
+          const badge = document.getElementById('chat-unread-badge');
+          if (badge) badge.classList.remove('active');
         }
       }
 
-      /* 穿透 DOM 向 iframe 内部注入暗黑样式 */
-      function injectInternalStyles() {
-        const iframes = document.querySelectorAll('iframe');
-        iframes.forEach((iframe) => {
-          try {
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-            if (iframeDoc && !iframeDoc.getElementById('custom-tawk-dark-style')) {
-              const style = iframeDoc.createElement('style');
-              style.id = 'custom-tawk-dark-style';
-              style.textContent = `
-                /* 顶栏背景色修正为暗黑风 */
-                header, .tawk-header-container, [class*="header"] {
-                  background: #161b22 !important;
-                  color: #ffffff !important;
-                }
-                /* 主体聊天区域背景及文字颜色 */
-                body, html, .tawk-body-container, [class*="chat-window"], [class*="card"] {
-                  background-color: #0d0e12 !important;
-                  color: #e2e8f0 !important;
-                }
-                /* 底部输入框区域暗黑化 */
-                footer, .tawk-footer-container, [class*="footer"], textarea, input {
-                  background-color: #161b22 !important;
-                  color: #ffffff !important;
-                  border-color: rgba(255, 255, 255, 0.1) !important;
-                }
-                /* 系统图标与按钮反色调整 */
-                button, svg {
-                  fill: #38bdf8 !important;
-                }
-              `;
-              iframeDoc.head.appendChild(style);
-            }
-          } catch (e) {
-            // 受浏览器同源策略 (Same-Origin Policy) 保护时捕获异常
-          }
-        });
+      // 发送消息中转逻辑
+      function handleSendMessage() {
+        const input = document.getElementById('chat-input-field');
+        const text = input.value.trim();
+        if (!text) return;
+
+        // 1. 渲染在自研 UI 界面
+        appendMessage('user', text);
+        input.value = '';
+
+        // 2. 将消息传递至 Tawk 后台通道
+        if (typeof Tawk_API.addEvent === 'function') {
+          Tawk_API.addEvent('UserMessage', { message: text });
+        }
       }
 
-      /* Tawk 生命周期与自定义事件响应 */
+      /* Tawk 后台事件回调处理 */
       Tawk_API.onLoad = function () {
         if (typeof Tawk_API.hideWidget === 'function') {
           Tawk_API.hideWidget();
         }
-        // 定时轮询确保新生成的 iframe 渲染时能成功被注入 CSS
-        setInterval(injectInternalStyles, 1000);
-      };
-
-      Tawk_API.onChatMaximized = function () {
-        var widget = getCustomWidget();
-        if (widget) widget.style.display = 'none';
-        updateBadge(0);
-        injectInternalStyles();
-      };
-
-      Tawk_API.onChatMinimized = function () {
-        if (typeof Tawk_API.hideWidget === 'function') {
-          Tawk_API.hideWidget();
-        }
-        var widget = getCustomWidget();
-        if (widget) widget.style.display = 'flex';
       };
 
       Tawk_API.onUnreadCountChanged = function(count) {
-        updateBadge(count);
+        const badge = document.getElementById('chat-unread-badge');
+        if (badge && count > 0) {
+          badge.classList.add('active');
+        }
       };
 
-      function toggleCustomChat() {
-        if (typeof Tawk_API.isChatMaximized === 'function' && Tawk_API.isChatMaximized()) {
-          Tawk_API.minimize();
-        } else {
-          Tawk_API.maximize();
-        }
-      }
-
-      // 初始化自定义悬浮按钮手势 drag 拖拽逻辑 (兼容 PC/Touch)
+      // 拖拽手势交互绑定
       document.addEventListener('DOMContentLoaded', function () {
-        var widget = getCustomWidget();
+        var widget = document.getElementById('custom-chat-trigger');
         if (!widget) return;
 
         var drag = null;
-
         widget.addEventListener('pointerdown', function (e) {
           var rect = widget.getBoundingClientRect();
           drag = {
-            pointerId: e.pointerId,
-            startX: e.clientX,
-            startY: e.clientY,
-            startLeft: rect.left,
-            startTop: rect.top,
-            moved: false
+            pointerId: e.pointerId, startX: e.clientX, startY: e.clientY,
+            startLeft: rect.left, startTop: rect.top, moved: false
           };
           widget.setPointerCapture(e.pointerId);
           widget.classList.add('is-dragging');
@@ -468,14 +542,9 @@
           }
           drag = null;
         });
-
-        widget.addEventListener('pointercancel', function () {
-          if (widget) widget.classList.remove('is-dragging');
-          drag = null;
-        });
       });
 
-      // 加载 Tawk 脚本
+      // 加载官方通道
       (function () {
         var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
         s1.async = true;
@@ -534,12 +603,41 @@
 
     <div id="root"></div>
 
-    <!-- 自定义暗黑科技风客服悬浮球 -->
+    <!-- 悬浮触控球 -->
     <div id="custom-chat-trigger" role="button" aria-label="Customer Support">
       <span id="chat-unread-badge" class="chat-badge"></span>
       <svg viewBox="0 0 24 24">
         <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
       </svg>
+    </div>
+
+    <!-- 自建 MERDEX 赛博暗黑风格客服面板 -->
+    <div id="merdex-chat-window">
+      <div class="chat-header">
+        <div class="chat-header-info">
+          <div class="chat-avatar">M</div>
+          <div>
+            <div class="chat-title-text">MER Support</div>
+            <div class="chat-status"><span class="green-dot"></span> Online</div>
+          </div>
+        </div>
+        <button class="close-chat-btn" onclick="toggleCustomChat()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="chat-messages" id="chat-messages">
+        <div class="msg-row agent">
+          <div class="msg-bubble">Welcome to MERDEX! How can we assist you today?</div>
+        </div>
+      </div>
+
+      <div class="chat-input-area">
+        <input type="text" id="chat-input-field" class="chat-input" placeholder="Type a message..." onkeydown="if(event.key==='Enter') handleSendMessage()" />
+        <button class="send-btn" onclick="handleSendMessage()">
+          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+      </div>
     </div>
 
     <script type="module" src="/app/main.tsx"></script>
