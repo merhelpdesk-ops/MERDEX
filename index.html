@@ -5,23 +5,19 @@
     <link rel="icon" type="image/webp" href="/favicon.webp" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
-    <!-- 【不破坏通信的零闪烁拦截】在生成瞬间强封样式，保留其后台通信能力 -->
+    <!-- 【精确拦截原生气泡，保护 PC 展开大窗口及关闭按钮】 -->
     <script>
       (function suppressNativeTawkIcon() {
         const observer = new MutationObserver((mutations) => {
           for (const mutation of mutations) {
             for (const node of mutation.addedNodes) {
               if (node.nodeType === 1 && node.tagName === 'IFRAME') {
-                const src = node.getAttribute('src') || '';
-                const title = node.getAttribute('title') || '';
+                const title = (node.getAttribute('title') || '').toLowerCase();
                 const style = node.getAttribute('style') || '';
                 
-                // 识别原生气泡图标 iframe（排除了展开后的聊天大窗口）
-                const isTawkBubble = 
-                  (src.includes('about:blank') || title.toLowerCase().includes('chat widget')) &&
-                  !style.includes('max-height: 100%') && 
-                  !style.includes('height: 100%') &&
-                  !style.includes('height:100%');
+                // 精确判定：只有当尺寸小于 150px 时才认为是原生浮动气泡，防止误伤大窗口
+                const isSmallBubble = style.includes('width: 60px') || style.includes('width: 64px') || style.includes('height: 60px') || style.includes('height: 64px');
+                const isTawkBubble = (title.includes('chat widget') || title.includes('tawk')) && !style.includes('100%') && (isSmallBubble || !style.includes('width:'));
 
                 if (isTawkBubble) {
                   node.style.setProperty('display', 'none', 'important');
@@ -306,9 +302,11 @@
         }
       }
 
-      /* CSS 层死死压制原生气泡，不影响后台 JS 运行 */
-      iframe[src="about:blank"][referrerpolicy="no-referrer-when-downgrade"],
-      iframe[title*="chat widget"]:not([style*="max-height:100%"]):not([style*="height: 100%"]) {
+      /* 精确隐藏原生气泡：仅当 iframe 尺寸为气泡大小时触发，绝不隐藏聊天大窗口 */
+      iframe[title*="chat widget"][style*="width: 60px"],
+      iframe[title*="chat widget"][style*="width: 64px"],
+      iframe[title*="chat widget"][style*="width:60px"],
+      iframe[title*="chat widget"][style*="width:64px"] {
         display: none !important;
         visibility: hidden !important;
         opacity: 0 !important;
@@ -354,46 +352,6 @@
           right: 20px;
         }
       }
-
-      /* ===== 升级版：精致高级感关闭按钮 ===== */
-      #tawk-custom-close-btn {
-        display: none;
-        position: fixed;
-        z-index: 2147483647;
-        width: 28px;
-        height: 28px;
-        background: rgba(15, 23, 42, 0.65);
-        color: rgba(255, 255, 255, 0.85);
-        border: 1px solid rgba(255, 255, 255, 0.18);
-        border-radius: 50%;
-        cursor: pointer;
-        align-items: center;
-        justify-content: center;
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-        outline: none;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-
-      #tawk-custom-close-btn:hover {
-        background: rgba(239, 68, 68, 0.9);
-        color: #ffffff;
-        border-color: rgba(255, 255, 255, 0.4);
-        transform: scale(1.12) rotate(90deg);
-        box-shadow: 0 0 12px rgba(239, 68, 68, 0.5);
-      }
-
-      #tawk-custom-close-btn:active {
-        transform: scale(0.95) rotate(90deg);
-      }
-
-      #tawk-custom-close-btn svg {
-        width: 14px;
-        height: 14px;
-        fill: currentColor;
-        transition: transform 0.2s ease;
-      }
     </style>
 
     <script>
@@ -431,54 +389,9 @@
         return document.getElementById('mobile-tawk-widget');
       }
 
-      function getCustomCloseBtn() {
-        return document.getElementById('tawk-custom-close-btn');
-      }
-
-      // 动态计算并更新关闭按钮的贴合位置
-      function positionCustomCloseBtn() {
-        var btn = getCustomCloseBtn();
-        if (!btn || btn.style.display === 'none') return;
-
-        // 寻找展开后的 Tawk 聊天框 iframe
-        var iframes = document.querySelectorAll('iframe');
-        var activeIframe = null;
-        iframes.forEach(function(iframe) {
-          var style = iframe.getAttribute('style') || '';
-          if (style.includes('max-height') || style.includes('height: 100%') || iframe.offsetHeight > 300) {
-            activeIframe = iframe;
-          }
-        });
-
-        if (activeIframe) {
-          var rect = activeIframe.getBoundingClientRect();
-          // 精确定位到弹窗内右上角（留出 12px 边距）
-          btn.style.top = (rect.top + 12) + 'px';
-          btn.style.right = (window.innerWidth - rect.right + 12) + 'px';
-          btn.style.left = 'auto';
-          btn.style.bottom = 'auto';
-        } else {
-          // 兜底定位
-          btn.style.top = 'auto';
-          btn.style.bottom = '520px';
-          btn.style.right = '24px';
-        }
-      }
-
       function showMobileTawkWidget(visible) {
         var widget = getMobileTawkWidget();
         if (widget) widget.classList.toggle('is-visible', visible && isMobileTawkScreen());
-      }
-
-      function toggleCustomCloseBtn(show) {
-        var btn = getCustomCloseBtn();
-        if (btn) {
-          btn.style.display = show ? 'flex' : 'none';
-          if (show) {
-            setTimeout(positionCustomCloseBtn, 50);
-            setTimeout(positionCustomCloseBtn, 300); // 预防展开动画延迟
-          }
-        }
       }
 
       function hideNativeTawkWidget() {
@@ -518,10 +431,8 @@
         var maximized = typeof Tawk_API.isChatMaximized === 'function' && Tawk_API.isChatMaximized();
         if (maximized) {
           showMobileTawkWidget(false);
-          toggleCustomCloseBtn(true);
         } else {
           showMobileTawkWidget(true);
-          toggleCustomCloseBtn(false);
           restoreMobileTawkPosition();
         }
       }
@@ -532,12 +443,6 @@
           Tawk_API.maximize();
         } else if (typeof Tawk_API.start === 'function') {
           Tawk_API.start();
-        }
-      }
-
-      function closeTawkChat() {
-        if (typeof Tawk_API.minimize === 'function') {
-          Tawk_API.minimize();
         }
       }
 
@@ -553,27 +458,21 @@
 
       Tawk_API.onChatMaximized = function () {
         showMobileTawkWidget(false);
-        toggleCustomCloseBtn(true);
       };
 
       Tawk_API.onChatMinimized = function () {
         hideNativeTawkWidget();
         showMobileTawkWidget(true);
-        toggleCustomCloseBtn(false);
         restoreMobileTawkPosition();
       };
 
       Tawk_API.onChatHidden = function () {
         hideNativeTawkWidget();
         showMobileTawkWidget(true);
-        toggleCustomCloseBtn(false);
         restoreMobileTawkPosition();
       };
 
-      window.addEventListener('resize', function() {
-        syncMobileTawkWidget();
-        positionCustomCloseBtn();
-      });
+      window.addEventListener('resize', syncMobileTawkWidget);
 
       document.addEventListener('DOMContentLoaded', function () {
         var widget = getMobileTawkWidget();
@@ -695,13 +594,6 @@
     </header>
 
     <div id="root"></div>
-
-    <!-- 升级版：自定义客服关闭按钮 -->
-    <button id="tawk-custom-close-btn" type="button" aria-label="Close Chat" title="Close Chat" onclick="closeTawkChat()">
-      <svg viewBox="0 0 24 24">
-        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-      </svg>
-    </button>
 
     <button id="mobile-tawk-widget" type="button" aria-label="Chat widget" title="Chat widget">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" height="32" width="32" role="img"
