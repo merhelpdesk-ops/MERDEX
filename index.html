@@ -5,26 +5,41 @@
     <link rel="icon" type="image/webp" href="/favicon.webp" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
-    <!-- 【精确拦截原生气泡，保护 PC 展开大窗口及关闭按钮】 -->
+    <!-- 【高优先级：零延迟 CSS 盲隐，彻底防止 0.1s 闪烁】 -->
+    <style id="tawk-anti-flicker">
+      /* 拦截所有 Tawk 的 iframe 盲隐，只有展开占满/大窗口时才放行 */
+      iframe[src*="tawk.to"]:not([style*="100%"]):not([style*="height: 100vh"]):not([style*="height: 5"]):not([style*="height: 6"]),
+      iframe[title*="chat widget"]:not([style*="100%"]):not([style*="height: 100vh"]):not([style*="height: 5"]):not([style*="height: 6"]),
+      iframe[title*="tawk"]:not([style*="100%"]):not([style*="height: 100vh"]):not([style*="height: 5"]):not([style*="height: 6"]) {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        transform: scale(0) !important;
+      }
+    </style>
+
+    <!-- 【极速拦截：DOM 注入监控】 -->
     <script>
       (function suppressNativeTawkIcon() {
         const observer = new MutationObserver((mutations) => {
           for (const mutation of mutations) {
             for (const node of mutation.addedNodes) {
               if (node.nodeType === 1 && node.tagName === 'IFRAME') {
+                const src = (node.getAttribute('src') || '').toLowerCase();
                 const title = (node.getAttribute('title') || '').toLowerCase();
-                const style = node.getAttribute('style') || '';
                 
-                // 精确判定：只有当尺寸小于 150px 时才认为是原生浮动气泡，防止误伤大窗口
-                const isSmallBubble = style.includes('width: 60px') || style.includes('width: 64px') || style.includes('height: 60px') || style.includes('height: 64px');
-                const isTawkBubble = (title.includes('chat widget') || title.includes('tawk')) && !style.includes('100%') && (isSmallBubble || !style.includes('width:'));
+                if (src.includes('tawk.to') || title.includes('chat widget') || title.includes('tawk')) {
+                  const style = node.getAttribute('style') || '';
+                  const isMaximized = style.includes('100%') || style.includes('height: 5') || style.includes('height: 6');
 
-                if (isTawkBubble) {
-                  node.style.setProperty('display', 'none', 'important');
-                  node.style.setProperty('visibility', 'hidden', 'important');
-                  node.style.setProperty('opacity', '0', 'important');
-                  node.style.setProperty('pointer-events', 'none', 'important');
-                  node.style.setProperty('transform', 'scale(0)', 'important');
+                  if (!isMaximized) {
+                    node.style.setProperty('display', 'none', 'important');
+                    node.style.setProperty('visibility', 'hidden', 'important');
+                    node.style.setProperty('opacity', '0', 'important');
+                    node.style.setProperty('pointer-events', 'none', 'important');
+                    node.style.setProperty('transform', 'scale(0)', 'important');
+                  }
                 }
               }
             }
@@ -302,18 +317,6 @@
         }
       }
 
-      /* 精确隐藏原生气泡：仅当 iframe 尺寸为气泡大小时触发，绝不隐藏聊天大窗口 */
-      iframe[title*="chat widget"][style*="width: 60px"],
-      iframe[title*="chat widget"][style*="width: 64px"],
-      iframe[title*="chat widget"][style*="width:60px"],
-      iframe[title*="chat widget"][style*="width:64px"] {
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-        transform: scale(0) !important;
-      }
-
       /* 自定义客服悬浮球 */
       #mobile-tawk-widget {
         display: none;
@@ -446,7 +449,7 @@
         }
       }
 
-      /* Tawk 生命周期逻辑 */
+      /* 【关键修正】：Tawk 生命周期原生阻击 */
       Tawk_API.onBeforeLoad = function() {
         hideNativeTawkWidget();
       };
