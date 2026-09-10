@@ -12,6 +12,17 @@
       var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
       Tawk_API.lang = 'en';
 
+      // 在 embed 脚本执行前注册，避免原生浮标先渲染再隐藏。
+      function hideNativeTawkWidget() {
+        if (typeof Tawk_API.hideWidget === 'function') {
+          Tawk_API.hideWidget();
+        }
+      }
+
+      Tawk_API.onBeforeLoad = hideNativeTawkWidget;
+      Tawk_API.onLoad = hideNativeTawkWidget;
+      Tawk_API.onChatMinimized = hideNativeTawkWidget;
+
       (function () {
         var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
         s1.async = true;
@@ -325,10 +336,6 @@
         transform: scale(0.96);
       }
 
-      #mobile-tawk-widget.is-hidden {
-        display: none !important;
-      }
-
       @media (min-width: 1001px) {
         #mobile-tawk-widget {
           bottom: 30px;
@@ -365,6 +372,20 @@
         return document.getElementById('mobile-tawk-widget');
       }
 
+      function clampMobileTawkPosition() {
+        var widget = getMobileTawkWidget();
+        if (!widget) return;
+        var rect = widget.getBoundingClientRect();
+        var left = Math.max(0, Math.min(rect.left, window.innerWidth - rect.width));
+        var top = Math.max(0, Math.min(rect.top, window.innerHeight - rect.height));
+        if (left !== rect.left || top !== rect.top) {
+          widget.style.left = left + 'px';
+          widget.style.top = top + 'px';
+          widget.style.right = 'auto';
+          widget.style.bottom = 'auto';
+        }
+      }
+
       function restoreMobileTawkPosition() {
         var widget = getMobileTawkWidget();
         if (!widget) return;
@@ -377,6 +398,7 @@
             widget.style.bottom = 'auto';
           }
         } catch (error) { }
+        clampMobileTawkPosition();
       }
 
       function openMobileTawkChat() {
@@ -387,11 +409,7 @@
         }
       }
 
-      Tawk_API.onLoad = function() {
-        if (typeof Tawk_API.hideWidget === 'function') {
-          Tawk_API.hideWidget();
-        }
-      };
+      window.addEventListener('resize', clampMobileTawkPosition);
 
       document.addEventListener('DOMContentLoaded', function () {
         restoreMobileTawkPosition();
@@ -501,10 +519,9 @@
 
     <div id="root"></div>
 
-    <button id="mobile-tawk-widget" type="button" aria-label="Chat widget" title="Chat widget"
-      class="tawk-custom-color tawk-custom-border-color tawk-outline tawk-button tawk-button-circle tawk-button-large">
+    <button id="mobile-tawk-widget" type="button" aria-label="Chat widget" title="Chat widget">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" height="32" width="32" role="img"
-        aria-labelledby="tawk-open-icon-title tawk-open-icon-description" class="tawk-min-chat-icon">
+        aria-labelledby="tawk-open-icon-title tawk-open-icon-description">
         <title id="tawk-open-icon-title">Opens Chat</title>
         <desc id="tawk-open-icon-description">This icon opens the chat window.</desc>
         <path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"
