@@ -5,21 +5,18 @@
     <link rel="icon" type="image/webp" href="/favicon.webp" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 
-    <!-- 1. 隐藏 Tawk.to 原生气泡，但保留主窗口 iframe 用于后台通讯 -->
+    <!-- 1. 彻底静默隐藏 Tawk.to 所有原生窗口和元素，仅保留后台 WebSocket 通讯功能 -->
     <style>
-      /* 隐藏 Tawk 右下角默认的悬浮小气泡 */
-      iframe[title*="chat widget"]:not([style*="height: 100%"]):not([style*="max-height: 100%"]) {
+      iframe[title*="chat widget"],
+      iframe[src*="tawk.to"],
+      div[id*="tawk"] {
         display: none !important;
         opacity: 0 !important;
+        visibility: hidden !important;
         pointer-events: none !important;
-      }
-      
-      /* 将 Tawk 展开后的原生界面隐藏在幕后，仅作为数据通道 */
-      iframe[title*="chat widget"][style*="height: 100%"],
-      iframe[title*="chat widget"][style*="max-height: 100%"] {
-        opacity: 0 !important;
-        pointer-events: none !important;
-        position: fixed !important;
+        width: 0 !important;
+        height: 0 !important;
+        position: absolute !important;
         left: -9999px !important;
         top: -9999px !important;
       }
@@ -425,7 +422,7 @@
       }
     </style>
 
-    <!-- 2. 通信中转：向 Tawk 注入发送与接收逻辑 -->
+    <!-- 2. 通信中转：注入绝对隐形下的文本发送与消息监听 -->
     <script type="text/javascript">
       var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
       Tawk_API.lang = 'en';
@@ -464,7 +461,7 @@
         }
       }
 
-      // 将自研 UI 的输入框内容推送到 Tawk 隐秘通道
+      // 将自研 UI 的输入框内容同步至底层隐藏通道
       function handleSendMessage() {
         const input = document.getElementById('chat-input-field');
         const text = input.value.trim();
@@ -474,15 +471,10 @@
         appendMessage('user', text);
         input.value = '';
 
-        // 2. 保证 Tawk 已经展开，以便其文档中的输入元素可用
-        if (typeof Tawk_API.maximize === 'function') {
-          Tawk_API.maximize();
-        }
-
-        // 3. 寻找 Tawk 隐藏 iframe 并填充发送真实文本
+        // 2. 静默注入隐藏 iframe 并模拟回车提交，避开原生界面的拉起
         setTimeout(() => {
           try {
-            const iframes = document.querySelectorAll('iframe[title*="chat widget"]');
+            const iframes = document.querySelectorAll('iframe[title*="chat widget"], iframe[src*="tawk.to"]');
             let sent = false;
 
             iframes.forEach((iframe) => {
@@ -493,7 +485,6 @@
                   textarea.value = text;
                   textarea.dispatchEvent(new Event('input', { bubbles: true }));
                   
-                  // 模拟 Enter 按键触发发送
                   const enterEvent = new KeyboardEvent('keydown', {
                     bubbles: true,
                     cancelable: true,
@@ -505,18 +496,18 @@
                   sent = true;
                 }
               } catch (e) {
-                // 跨域读取受限时的降级防护
+                // 跨域读取防护
               }
             });
 
-            // 4. 如果没能注入 DOM，退回 API 提示模式
+            // 3. 兜底方案：API 埋点转发
             if (!sent && typeof Tawk_API.addEvent === 'function') {
-              Tawk_API.addEvent('message', { text: text });
+              Tawk_API.addEvent('UserMessage', { text: text });
             }
           } catch (err) {
-            console.error('Failed to dispatch message to Tawk channel:', err);
+            console.error('Failed to send message via Tawk:', err);
           }
-        }, 100);
+        }, 50);
       }
 
       /* Tawk 后台事件回调处理 */
