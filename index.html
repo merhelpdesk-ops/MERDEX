@@ -355,6 +355,38 @@
           right: 20px;
         }
       }
+
+      /* ===== 新增：电脑端客服窗口专属关闭按钮样式 ===== */
+      #tawk-custom-close-btn {
+        display: none;
+        position: fixed;
+        right: 20px;
+        bottom: 535px; /* 对齐 Tawk 默认大窗口顶部 */
+        z-index: 2147483647;
+        width: 30px;
+        height: 30px;
+        background: rgba(0, 0, 0, 0.5);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      }
+
+      #tawk-custom-close-btn:hover {
+        background: rgba(239, 68, 68, 0.85); /* 悬浮变成红色 */
+        transform: scale(1.1);
+      }
+
+      #tawk-custom-close-btn svg {
+        width: 16px;
+        height: 16px;
+        fill: currentColor;
+      }
     </style>
 
     <script>
@@ -392,9 +424,20 @@
         return document.getElementById('mobile-tawk-widget');
       }
 
+      function getCustomCloseBtn() {
+        return document.getElementById('tawk-custom-close-btn');
+      }
+
       function showMobileTawkWidget(visible) {
         var widget = getMobileTawkWidget();
         if (widget) widget.classList.toggle('is-visible', visible && isMobileTawkScreen());
+      }
+
+      function toggleCustomCloseBtn(show) {
+        var btn = getCustomCloseBtn();
+        if (btn) {
+          btn.style.display = show ? 'flex' : 'none';
+        }
       }
 
       function hideNativeTawkWidget() {
@@ -434,8 +477,10 @@
         var maximized = typeof Tawk_API.isChatMaximized === 'function' && Tawk_API.isChatMaximized();
         if (maximized) {
           showMobileTawkWidget(false);
+          toggleCustomCloseBtn(true); // 打开聊天窗口时显示关闭按钮
         } else {
           showMobileTawkWidget(true);
+          toggleCustomCloseBtn(false); // 隐藏聊天窗口时同时隐藏关闭按钮
           restoreMobileTawkPosition();
         }
       }
@@ -446,6 +491,12 @@
           Tawk_API.maximize();
         } else if (typeof Tawk_API.start === 'function') {
           Tawk_API.start();
+        }
+      }
+
+      function closeTawkChat() {
+        if (typeof Tawk_API.minimize === 'function') {
+          Tawk_API.minimize();
         }
       }
 
@@ -461,17 +512,20 @@
 
       Tawk_API.onChatMaximized = function () {
         showMobileTawkWidget(false);
+        toggleCustomCloseBtn(true);
       };
 
       Tawk_API.onChatMinimized = function () {
         hideNativeTawkWidget();
         showMobileTawkWidget(true);
+        toggleCustomCloseBtn(false);
         restoreMobileTawkPosition();
       };
 
       Tawk_API.onChatHidden = function () {
         hideNativeTawkWidget();
         showMobileTawkWidget(true);
+        toggleCustomCloseBtn(false);
         restoreMobileTawkPosition();
       };
 
@@ -597,6 +651,13 @@
     </header>
 
     <div id="root"></div>
+
+    <!-- 新增：自定义客服关闭按钮 -->
+    <button id="tawk-custom-close-btn" type="button" aria-label="Close Chat" title="Close Chat" onclick="closeTawkChat()">
+      <svg viewBox="0 0 24 24">
+        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+      </svg>
+    </button>
 
     <button id="mobile-tawk-widget" type="button" aria-label="Chat widget" title="Chat widget">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" height="32" width="32" role="img"
