@@ -541,9 +541,8 @@
 
       // 接收访客多端/同步消息
       Tawk_API.onChatMessageVisitor = function(message) {
-        // 如果是在其他标签页发出的消息，也会被完美同步
         const input = document.getElementById('chat-input-field');
-        if (input && input.value !== '') return; // 过滤当前页面刚发送过的消息
+        if (input && input.value !== '') return;
       };
 
       // 未读消息数变动通知
@@ -566,7 +565,6 @@
           const badge = document.getElementById('chat-unread-badge');
           if (badge && win.classList.contains('open')) {
             badge.classList.remove('active');
-            // 清除 Tawk 未读状态
             if (typeof Tawk_API.minimize === 'function') {
               Tawk_API.minimize();
             }
@@ -685,7 +683,7 @@
         </li>
         <li class="merdex-nav-item">
           <a href="https://service.mer.finance">
-            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
             <span>Service</span>
           </a>
         </li>
