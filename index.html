@@ -377,22 +377,42 @@
         } catch (error) { }
       }
 
+      var tawkReady = false;
+
       function openMobileTawkChat() {
+        // 同步先加 class，必须在 maximize() 之前 —— 否则 MutationObserver
+        // (microtask, 先于 requestAnimationFrame 执行) 会立刻把 iframe 又藏掉
+        document.body.classList.add('tawk-chat-open');
         showMobileTawkWidget(false);
-        if (typeof Tawk_API.maximize === 'function') {
-          Tawk_API.maximize();
-        } else if (typeof Tawk_API.start === 'function') {
-          Tawk_API.start();
-          if (typeof Tawk_API.maximize === 'function') Tawk_API.maximize();
+
+        // 客服脚本还没加载完成，延迟重试，避免 maximize 不存在
+        if (!tawkReady) {
+          setTimeout(function () {
+            if (tawkReady) {
+              openMobileTawkChat();
+            } else {
+              document.body.classList.remove('tawk-chat-open');
+              showMobileTawkWidget(true);
+            }
+          }, 300);
+          return;
         }
-        requestAnimationFrame(function() {
-          document.body.classList.add('tawk-chat-open');
-        });
+
+        try {
+          // widget 之前被 hideWidget() 藏掉了，必须先 showWidget() 再 maximize()
+          if (typeof Tawk_API.showWidget === 'function') Tawk_API.showWidget();
+          if (typeof Tawk_API.maximize === 'function') {
+            Tawk_API.maximize();
+          } else if (typeof Tawk_API.toggle === 'function') {
+            Tawk_API.toggle();
+          }
+        } catch (e) {}
       }
 
       Tawk_API.onBeforeLoad = forceHideNativeTawk;
       
       Tawk_API.onLoad = function () {
+        tawkReady = true;
         forceHideNativeTawk();
         if (Tawk_API.isChatMaximized && Tawk_API.isChatMaximized()) {
           document.body.classList.add('tawk-chat-open');
@@ -519,9 +539,7 @@
           drag = null;
         });
 
-        widget.addEventListener('click', function (event) {
-          openMobileTawkChat();
-        });
+
       });
     </script>
   </head>
