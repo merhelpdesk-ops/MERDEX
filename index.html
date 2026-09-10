@@ -272,11 +272,14 @@
         }
       }
 
-      /* 隐藏 Tawk 原生小图标 iframe，保留自定义客服按钮和展开的聊天窗口 */
+      /* 兜底强行隐藏 Tawk 官方小图标 iframe（防漏网之鱼） */
       iframe[src="about:blank"][referrerpolicy="no-referrer-when-downgrade"][style*="max-width:124px"],
-      iframe[src="about:blank"][referrerpolicy="no-referrer-when-downgrade"][style*="max-width: 124px"] {
-        transform: translateX(200vw) !important;
-        -webkit-transform: translateX(200vw) !important;
+      iframe[src="about:blank"][referrerpolicy="no-referrer-when-downgrade"][style*="max-width: 124px"],
+      iframe[title*="chat widget"]:not([style*="max-height:100%"]):not([style*="height: 100%"]) {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
       }
 
       /* Tawk 客服悬浮球：初始隐藏，响应 JS 控制显隐 */
@@ -343,6 +346,10 @@
     <script type="text/javascript">
       var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
       Tawk_API.lang = 'en';
+      
+      //【核心修改】告诉 Tawk 官方不要渲染和启动原生的气泡小图标
+      Tawk_API.autoStart = false;
+
       var mobileTawkPositionKey = 'merdex-mobile-tawk-position';
 
       function isMobileTawkScreen() {
@@ -410,8 +417,10 @@
         }
       }
 
-      /* Tawk 生命周期及防闪烁逻辑 */
-      Tawk_API.onBeforeLoad = hideNativeTawkWidget;
+      /* Tawk 生命周期及隐藏原生的逻辑 */
+      Tawk_API.onBeforeLoad = function() {
+        hideNativeTawkWidget();
+      };
 
       Tawk_API.onLoad = function () {
         hideNativeTawkWidget();
