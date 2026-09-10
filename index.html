@@ -3,39 +3,34 @@
   <head>
     <meta charset="UTF-8" />
     
-    <!-- 【第一道防线：首帧绝对隐形】提升至 head 最顶端，零延迟拦截所有原生 Tawk 控件 -->
+    <!-- 1. 核物理级黑洞样式：拦截所有常规挂载 -->
     <style id="tawk-anti-flicker-style">
-      /* 默认强行隐藏所有非展开状态的 Tawk iframe，避免脚本动态插入时的闪烁 */
-      iframe[src*="tawk.to"]:not(.tawk-maximized),
-      iframe[title*="chat widget"]:not(.tawk-maximized),
-      iframe[title*="tawk"]:not(.tawk-maximized) {
+      /* 强行封锁所有带有 tawk 标识的元素，除非它被打上了 is-chat-maximized 标记 */
+      iframe[src*="tawk.to"]:not(.is-chat-maximized),
+      iframe[title*="chat widget"]:not(.is-chat-maximized),
+      iframe[title*="tawk"]:not(.is-chat-maximized),
+      div[id*="tawk"]:not(.is-chat-maximized) {
         display: none !important;
         opacity: 0 !important;
         visibility: hidden !important;
         pointer-events: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        position: fixed !important;
+        top: -9999px !important;
+        left: -9999px !important;
       }
 
-      /* 仅当显式标记为展开大窗 (.tawk-maximized) 时放行显示 */
-      body > iframe[src*="tawk.to"].tawk-maximized,
-      body > iframe[style*="height: 100%"].tawk-maximized,
-      body > iframe[style*="height:100%"].tawk-maximized {
+      /* 只有放大的聊天框才允许在主文档渲染 */
+      iframe.is-chat-maximized {
         display: block !important;
         opacity: 1 !important;
         visibility: visible !important;
         pointer-events: auto !important;
       }
 
-      /* 沙盒宿主容器完全不占用布局 */
       #tawk-shadow-sandbox {
-        display: block !important;
-        position: absolute !important;
-        width: 0 !important;
-        height: 0 !important;
-        overflow: hidden !important;
-        pointer-events: none !important;
-        top: -99999px !important;
-        left: -99999px !important;
-        z-index: -1 !important;
+        display: none !important;
       }
     </style>
 
@@ -370,13 +365,61 @@
       })();
     </script>
 
-    <!-- 2. Shadow DOM 物理隔离与无闪烁核心逻辑 -->
+    <!-- 2. 底层 DOM API 劫持拦截（在 Tawk 运行前强行生效） -->
     <script type="text/javascript">
       var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
       Tawk_API.lang = 'en';
 
       var mobileTawkPositionKey = 'merdex-mobile-tawk-position';
 
+      /* 构建一个绝对隔离的 Shadow DOM 隔离舱 */
+      var sandboxHost = document.createElement('div');
+      sandboxHost.id = 'tawk-shadow-sandbox';
+      var shadowRoot = sandboxHost.attachShadow({ mode: 'closed' }); // 设为 closed 彻底禁止 Tawk 内部代码感知到它
+      
+      (document.head || document.documentElement).appendChild(sandboxHost);
+
+      /* 【黑科技】劫持 DOM 挂载函数：任何 Tawk 挂件在插入主页面的瞬时，被重定向抓进影子节点 */
+      var origAppendChild = Node.prototype.appendChild;
+      var origInsertBefore = Node.prototype.insertBefore;
+
+      function isTawkNode(node) {
+        if (!node || node.nodeType !== 1) return false;
+        var src = node.getAttribute('src') || '';
+        var title = node.getAttribute('title') || '';
+        var id = node.id || '';
+        return src.indexOf('tawk.to') !== -1 || title.indexOf('tawk') !== -1 || title.indexOf('chat widget') !== -1 || id.indexOf('tawk') !== -1;
+      }
+
+      function checkAndClassify(node) {
+        if (!isTawkNode(node)) return false;
+        var style = node.getAttribute('style') || '';
+        // 检测 Tawk 什么时候变身成为大聊天框
+        var isMaximized = style.indexOf('100%') !== -1 || style.indexOf('height: 5') !== -1 || style.indexOf('height: 6') !== -1;
+        if (isMaximized) {
+          node.classList.add('is-chat-maximized');
+          return false; // 放行回到主文档
+        } else {
+          node.classList.remove('is-chat-maximized');
+          return true; // 隔离丢进 Shadow DOM
+        }
+      }
+
+      Node.prototype.appendChild = function(child) {
+        if (checkAndClassify(child)) {
+          return origAppendChild.call(shadowRoot, child);
+        }
+        return origAppendChild.apply(this, arguments);
+      };
+
+      Node.prototype.insertBefore = function(newNode, referenceNode) {
+        if (checkAndClassify(newNode)) {
+          return origAppendChild.call(shadowRoot, newNode);
+        }
+        return origInsertBefore.apply(this, arguments);
+      };
+
+      /* 业务辅助函数 */
       function getMobileTawkWidget() {
         return document.getElementById('mobile-tawk-widget');
       }
@@ -386,50 +429,12 @@
         if (widget) widget.classList.toggle('is-visible', visible);
       }
 
-      function hideNativeTawkWidget() {
+      function forceHideNativeTawk() {
         try {
           if (typeof Tawk_API !== 'undefined' && typeof Tawk_API.hideWidget === 'function') {
             Tawk_API.hideWidget();
           }
         } catch (e) {}
-      }
-
-      /* 获取或立即创建 Shadow Sandbox 宿主 */
-      function ensureSandbox() {
-        var host = document.getElementById('tawk-shadow-sandbox');
-        if (!host) {
-          host = document.createElement('div');
-          host.id = 'tawk-shadow-sandbox';
-          var shadowRoot = host.attachShadow({ mode: 'open' });
-          shadowRoot.innerHTML = '<style>iframe { display: none !important; opacity: 0 !important; visibility: hidden !important; }</style>';
-          (document.body || document.documentElement).appendChild(host);
-        }
-        return host.shadowRoot;
-      }
-
-      /* 核心解法：将主文档中误插的 Tawk iframe 搬迁到 Shadow DOM 沙盒 */
-      function quarantineTawkNodes() {
-        var shadow = ensureSandbox();
-        var iframes = document.querySelectorAll('iframe[src*="tawk.to"], iframe[title*="chat widget"], iframe[title*="tawk"]');
-
-        iframes.forEach(function (iframe) {
-          var style = iframe.getAttribute('style') || '';
-          var isMaximized = style.indexOf('100%') !== -1 || style.indexOf('height: 5') !== -1 || style.indexOf('height: 6') !== -1;
-
-          if (!isMaximized) {
-            iframe.classList.remove('tawk-maximized');
-            // 如果是非最大化气泡，收入 Shadow Root 隔离层
-            if (iframe.parentNode !== shadow) {
-              shadow.appendChild(iframe);
-            }
-          } else {
-            iframe.classList.add('tawk-maximized');
-            // 如果是大窗口（聊天框），才允许释放回 main document 渲染
-            if (iframe.parentNode !== document.body) {
-              document.body.appendChild(iframe);
-            }
-          }
-        });
       }
 
       function restoreMobileTawkPosition() {
@@ -456,48 +461,30 @@
         }
       }
 
-      /* 提前挂载 MutationObserver：零延迟开始监管 DOM 节点变动 */
-      var observer = new MutationObserver(quarantineTawkNodes);
-      observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
-
-      /* Tawk 生命周期 Hook 全覆盖 */
-      Tawk_API.onBeforeLoad = function() {
-        hideNativeTawkWidget();
-        quarantineTawkNodes();
-      };
-
+      /* Tawk 事件回调处理 */
+      Tawk_API.onBeforeLoad = forceHideNativeTawk;
       Tawk_API.onLoad = function () {
-        hideNativeTawkWidget();
-        quarantineTawkNodes();
+        forceHideNativeTawk();
         showMobileTawkWidget(true);
         restoreMobileTawkPosition();
       };
-
       Tawk_API.onChatMaximized = function () {
         showMobileTawkWidget(false);
-        quarantineTawkNodes();
       };
-
       Tawk_API.onChatMinimized = function () {
-        hideNativeTawkWidget();
-        quarantineTawkNodes();
+        forceHideNativeTawk();
         showMobileTawkWidget(true);
         restoreMobileTawkPosition();
       };
-
       Tawk_API.onChatHidden = function () {
-        hideNativeTawkWidget();
-        quarantineTawkNodes();
+        forceHideNativeTawk();
         showMobileTawkWidget(true);
         restoreMobileTawkPosition();
       };
 
-      /* 初始化与 DOM 交互绑定 */
+      /* DOM 准备好后绑定事件与引入脚本 */
       document.addEventListener('DOMContentLoaded', function () {
-        ensureSandbox();
-        quarantineTawkNodes();
-
-        // 引入官方 SDK 脚本
+        // 动态加载 SDK 脚本
         var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
         s1.async = true;
         s1.src = 'https://embed.tawk.to/6a98b268451e133447599dcc/1k1l6h0rv';
@@ -509,7 +496,6 @@
           document.head.appendChild(s1);
         }
 
-        // 自定义 UI 交互绑扎
         var widget = getMobileTawkWidget();
         var drag = null;
 
