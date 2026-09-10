@@ -5,20 +5,26 @@
     <link rel="icon" type="image/webp" href="/favicon.webp" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 
-    <!-- 1. 彻底静默隐藏 Tawk.to 所有原生窗口和元素，仅保留后台 WebSocket 通讯功能 -->
+    <!-- 1. 强力抹杀 Tawk 原生所有 UI（包括弹出的聊天主窗口、底部 Powered by 标识等） -->
     <style>
+      /* 强制将所有属于 tawk 的组件归零，阻止其获取渲染空间 */
       iframe[title*="chat widget"],
       iframe[src*="tawk.to"],
-      div[id*="tawk"] {
+      div[id*="tawk"],
+      .tawk-min-container,
+      .tawk-max-container {
         display: none !important;
         opacity: 0 !important;
         visibility: hidden !important;
         pointer-events: none !important;
         width: 0 !important;
         height: 0 !important;
-        position: absolute !important;
-        left: -9999px !important;
+        max-width: 0 !important;
+        max-height: 0 !important;
+        position: fixed !important;
         top: -9999px !important;
+        left: -9999px !important;
+        z-index: -9999 !important;
       }
     </style>
 
@@ -422,12 +428,12 @@
       }
     </style>
 
-    <!-- 2. 通信中转：注入绝对隐形下的文本发送与消息监听 -->
+    <!-- 2. 通信与静默拦截机制 -->
     <script type="text/javascript">
       var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
       Tawk_API.lang = 'en';
 
-      // 往自定义界面渲染消息
+      // 渲染消息至自定义窗口
       function appendMessage(sender, text) {
         const msgContainer = document.getElementById('chat-messages');
         if (!msgContainer) return;
@@ -451,7 +457,7 @@
         msgContainer.scrollTop = msgContainer.scrollHeight;
       }
 
-      // 打开/关闭面板
+      // 显隐面板控制
       function toggleCustomChat() {
         const win = document.getElementById('merdex-chat-window');
         if (win) {
@@ -461,20 +467,19 @@
         }
       }
 
-      // 将自研 UI 的输入框内容同步至底层隐藏通道
+      // 静默推送消息至 Tawk
       function handleSendMessage() {
         const input = document.getElementById('chat-input-field');
         const text = input.value.trim();
         if (!text) return;
 
-        // 1. 本地渲染用户消息
         appendMessage('user', text);
         input.value = '';
 
-        // 2. 静默注入隐藏 iframe 并模拟回车提交，避开原生界面的拉起
+        // 直接向 Tawk iframe 填值，避免触发接口的展开方法
         setTimeout(() => {
           try {
-            const iframes = document.querySelectorAll('iframe[title*="chat widget"], iframe[src*="tawk.to"]');
+            const iframes = document.querySelectorAll('iframe');
             let sent = false;
 
             iframes.forEach((iframe) => {
@@ -495,35 +500,49 @@
                   textarea.dispatchEvent(enterEvent);
                   sent = true;
                 }
-              } catch (e) {
-                // 跨域读取防护
-              }
+              } catch (e) {}
             });
 
-            // 3. 兜底方案：API 埋点转发
-            if (!sent && typeof Tawk_API.addEvent === 'function') {
-              Tawk_API.addEvent('UserMessage', { text: text });
+            if (!sent && typeof Tawk_API.sendMessage === 'function') {
+              Tawk_API.sendMessage(text);
             }
           } catch (err) {
-            console.error('Failed to send message via Tawk:', err);
+            console.error('Send message failed:', err);
           }
         }, 50);
       }
 
-      /* Tawk 后台事件回调处理 */
-      Tawk_API.onLoad = function () {
+      /* 定时与事件监听双重隐藏原生组件 */
+      function killNativeTawkUI() {
         if (typeof Tawk_API.hideWidget === 'function') {
           Tawk_API.hideWidget();
         }
+        if (typeof Tawk_API.minimize === 'function') {
+          Tawk_API.minimize();
+        }
+        
+        // 抓取并隐藏动态创出的 DOM 容器
+        const tawkElements = document.querySelectorAll('iframe[src*="tawk.to"], div[id*="tawk"]');
+        tawkElements.forEach((el) => {
+          el.style.setProperty('display', 'none', 'important');
+          el.style.setProperty('opacity', '0', 'important');
+          el.style.setProperty('visibility', 'hidden', 'important');
+          el.style.setProperty('pointer-events', 'none', 'important');
+        });
+      }
+
+      Tawk_API.onLoad = function () {
+        killNativeTawkUI();
+        // 持续轮询拦截 Tawk 自动弹窗
+        setInterval(killNativeTawkUI, 300);
       };
 
-      // 监听客服发来的消息
+      // 接收来自客服端的消息
       Tawk_API.onChatMessageAgent = function(message) {
         var msgText = typeof message === 'string' ? message : (message.message || message.text);
         if (msgText) {
           appendMessage('agent', msgText);
 
-          // 未打开面板时点亮红点
           const win = document.getElementById('merdex-chat-window');
           if (win && !win.classList.contains('open')) {
             const badge = document.getElementById('chat-unread-badge');
@@ -539,7 +558,7 @@
         }
       };
 
-      // 拖拽手势交互绑定
+      // 悬浮球移动与点击
       document.addEventListener('DOMContentLoaded', function () {
         var widget = document.getElementById('custom-chat-trigger');
         if (!widget) return;
@@ -582,7 +601,7 @@
         });
       });
 
-      // 加载官方通道
+      // 引入官方 SDK 核心
       (function () {
         var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
         s1.async = true;
