@@ -5,81 +5,27 @@
     <link rel="icon" type="image/webp" href="/favicon.webp" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
-    <!-- 【第 0 层：底层 DOM 原型链封杀器】在节点挂载前强行把物理尺寸抹为零 -->
-    <script>
-      (function nuclearTawkInterceptor() {
-        function isMaximizedStyle(styleStr) {
-          if (!styleStr) return false;
-          const s = styleStr.toLowerCase();
-          return s.includes('100%') || s.includes('height: 5') || s.includes('height: 6') || s.includes('height:100vh');
-        }
-
-        function enforceHideIfBubble(node) {
-          if (node && node.nodeType === 1 && node.tagName === 'IFRAME') {
-            const src = (node.getAttribute('src') || '').toLowerCase();
-            const title = (node.getAttribute('title') || '').toLowerCase();
-            
-            if (src.includes('tawk.to') || title.includes('chat widget') || title.includes('tawk')) {
-              const style = node.getAttribute('style') || '';
-              if (!isMaximizedStyle(style)) {
-                node.style.setProperty('width', '0px', 'important');
-                node.style.setProperty('height', '0px', 'important');
-                node.style.setProperty('display', 'none', 'important');
-                node.style.setProperty('visibility', 'hidden', 'important');
-                node.style.setProperty('opacity', '0', 'important');
-                node.style.setProperty('pointer-events', 'none', 'important');
-                node.style.setProperty('transform', 'scale(0)', 'important');
-              }
-            }
-          }
-        }
-
-        const originalAppendChild = Element.prototype.appendChild;
-        Element.prototype.appendChild = function (child) {
-          enforceHideIfBubble(child);
-          return originalAppendChild.apply(this, arguments);
-        };
-
-        const originalInsertBefore = Element.prototype.insertBefore;
-        Element.prototype.insertBefore = function (newNode, referenceNode) {
-          enforceHideIfBubble(newNode);
-          return originalInsertBefore.apply(this, arguments);
-        };
-
-        const observer = new MutationObserver((mutations) => {
-          for (const mutation of mutations) {
-            if (mutation.type === 'childList') {
-              mutation.addedNodes.forEach(enforceHideIfBubble);
-            } else if (mutation.type === 'attributes' && mutation.target.tagName === 'IFRAME') {
-              enforceHideIfBubble(mutation.target);
-            }
-          }
-        });
-
-        if (document.documentElement) {
-          observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
-        } else {
-          document.addEventListener('DOMContentLoaded', () => {
-            observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
-          });
-        }
-      })();
-    </script>
-
-    <!-- 【第 1 层：最强物理限制 CSS】 -->
-    <style id="tawk-absolute-shield">
+    <!-- 【第 0 层：物理隔离样式防线】绝不给 Tawk 原生气泡 1px 的绘制空间 -->
+    <style id="tawk-nuclear-shield">
+      /* 强制拦截页面上所有 Tawk 相关的隐藏 DOM 节点 */
       iframe[src*="tawk.to"]:not([style*="100%"]):not([style*="height: 5"]):not([style*="height: 6"]),
       iframe[title*="chat widget"]:not([style*="100%"]):not([style*="height: 5"]):not([style*="height: 6"]),
       iframe[title*="tawk"]:not([style*="100%"]):not([style*="height: 5"]):not([style*="height: 6"]) {
         display: none !important;
         visibility: hidden !important;
         opacity: 0 !important;
-        width: 0 !important;
-        height: 0 !important;
+        width: 0px !important;
+        height: 0px !important;
+        max-width: 0px !important;
+        max-height: 0px !important;
+        position: fixed !important;
+        top: -9999px !important;
+        left: -9999px !important;
         pointer-events: none !important;
         transform: scale(0) !important;
       }
 
+      /* 展开大窗口时放行展示 */
       iframe[src*="tawk.to"][style*="100%"],
       iframe[src*="tawk.to"][style*="height: 5"],
       iframe[src*="tawk.to"][style*="height: 6"],
@@ -91,6 +37,9 @@
         opacity: 1 !important;
         pointer-events: auto !important;
         transform: scale(1) !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
       }
     </style>
 
@@ -422,13 +371,10 @@
       })();
     </script>
 
-    <!-- 【第 2 层：无闪烁 SDK 控制器】设置 autoStart = false 并延迟加载脚本 -->
+    <!-- 【核心解法】：强行将 Tawk 挂载节点抹平，并配合样式清理防闪 -->
     <script type="text/javascript">
       var Tawk_API = Tawk_API || {};
       var Tawk_LoadStart = new Date();
-
-      // 禁用自动生成原生气泡，彻底解决初次加载闪烁
-      Tawk_API.autoStart = false;
       Tawk_API.lang = 'en';
 
       var mobileTawkPositionKey = 'merdex-mobile-tawk-position';
@@ -440,6 +386,25 @@
       function showMobileTawkWidget(visible) {
         var widget = getMobileTawkWidget();
         if (widget) widget.classList.toggle('is-visible', visible);
+      }
+
+      function cleanTawkStyles() {
+        // 抓取并抹除所有非最大化的 iframe
+        var iframes = document.querySelectorAll('iframe[src*="tawk.to"], iframe[title*="chat widget"], iframe[title*="tawk"]');
+        iframes.forEach(function(iframe) {
+          var style = iframe.getAttribute('style') || '';
+          var isMaximized = style.includes('100%') || style.includes('height: 5') || style.includes('height: 6') || style.includes('height:100vh');
+          if (!isMaximized) {
+            iframe.style.setProperty('display', 'none', 'important');
+            iframe.style.setProperty('visibility', 'hidden', 'important');
+            iframe.style.setProperty('opacity', '0', 'important');
+            iframe.style.setProperty('width', '0px', 'important');
+            iframe.style.setProperty('height', '0px', 'important');
+            iframe.style.setProperty('position', 'fixed', 'important');
+            iframe.style.setProperty('top', '-9999px', 'important');
+            iframe.style.setProperty('left', '-9999px', 'important');
+          }
+        });
       }
 
       function restoreMobileTawkPosition() {
@@ -466,8 +431,15 @@
         }
       }
 
-      /* 生命周期钩子 */
+      /* 实时打断渲染流 */
+      var observer = new MutationObserver(function() {
+        cleanTawkStyles();
+      });
+      observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+
+      /* Tawk 生命周期 */
       Tawk_API.onLoad = function () {
+        cleanTawkStyles();
         if (typeof Tawk_API.hideWidget === 'function') {
           Tawk_API.hideWidget();
         }
@@ -480,6 +452,7 @@
       };
 
       Tawk_API.onChatMinimized = function () {
+        cleanTawkStyles();
         if (typeof Tawk_API.hideWidget === 'function') {
           Tawk_API.hideWidget();
         }
@@ -488,6 +461,7 @@
       };
 
       Tawk_API.onChatHidden = function () {
+        cleanTawkStyles();
         if (typeof Tawk_API.hideWidget === 'function') {
           Tawk_API.hideWidget();
         }
@@ -559,8 +533,8 @@
         });
       });
 
-      // 页面 load 后异步加载 Tawk 脚本，彻底避开首屏渲染
-      window.addEventListener('load', function() {
+      // 强行挂载 Tawk SDK
+      (function () {
         var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
         s1.async = true;
         s1.src = 'https://embed.tawk.to/6a98b268451e133447599dcc/1k1l6h0rv';
@@ -571,7 +545,7 @@
         } else {
           document.head.appendChild(s1);
         }
-      });
+      })();
     </script>
   </head>
   <body>
