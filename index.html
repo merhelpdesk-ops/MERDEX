@@ -5,25 +5,25 @@
     <link rel="icon" type="image/webp" href="/favicon.webp" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 
-    <!-- 1. 彻底拦截并隐藏 Tawk.to 原生所有 IFRAME 界面 -->
-    <script>
-      (function hideAllTawkIframes() {
-        const observer = new MutationObserver((mutations) => {
-          for (const mutation of mutations) {
-            for (const node of mutation.addedNodes) {
-              if (node.nodeType === 1 && node.tagName === 'IFRAME') {
-                // 彻底隐藏原生界面，仅留后台通道
-                node.style.setProperty('display', 'none', 'important');
-                node.style.setProperty('visibility', 'hidden', 'important');
-                node.style.setProperty('opacity', '0', 'important');
-                node.style.setProperty('pointer-events', 'none', 'important');
-              }
-            }
-          }
-        });
-        observer.observe(document.documentElement, { childList: true, subtree: true });
-      })();
-    </script>
+    <!-- 1. 隐藏 Tawk.to 原生气泡，但保留主窗口 iframe 用于后台通讯 -->
+    <style>
+      /* 隐藏 Tawk 右下角默认的悬浮小气泡 */
+      iframe[title*="chat widget"]:not([style*="height: 100%"]):not([style*="max-height: 100%"]) {
+        display: none !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+      }
+      
+      /* 将 Tawk 展开后的原生界面隐藏在幕后，仅作为数据通道 */
+      iframe[title*="chat widget"][style*="height: 100%"],
+      iframe[title*="chat widget"][style*="max-height: 100%"] {
+        opacity: 0 !important;
+        pointer-events: none !important;
+        position: fixed !important;
+        left: -9999px !important;
+        top: -9999px !important;
+      }
+    </style>
 
     <link rel="dns-prefetch" href="https://embed.tawk.to" />
     <link rel="preconnect" href="https://embed.tawk.to" crossorigin />
@@ -138,10 +138,7 @@
         display: inline-block;
       }
 
-      /* ---------------------------------------------------- */
-      /* 自定义悬浮球 + 自建 MERDEX 赛博暗黑风格客服面板     */
-      /* ---------------------------------------------------- */
-
+      /* 自定义悬浮球 + 自建 MERDEX 赛博暗黑风格客服面板 */
       #custom-chat-trigger {
         position: fixed;
         bottom: 80px;
@@ -219,7 +216,6 @@
         to { opacity: 1; transform: translateY(0) scale(1); }
       }
 
-      /* 头部 */
       .chat-header {
         padding: 16px;
         background: #161b22;
@@ -273,7 +269,6 @@
       }
       .close-chat-btn:hover { color: #ffffff; }
 
-      /* 消息区域 */
       .chat-messages {
         flex: 1;
         padding: 16px;
@@ -330,7 +325,6 @@
         margin-top: 4px;
       }
 
-      /* 底部输入框 */
       .chat-input-area {
         padding: 12px 16px;
         background: #161b22;
@@ -431,13 +425,12 @@
       }
     </style>
 
-    <!-- 2. 中转逻辑：拦截与转发出入站消息 -->
+    <!-- 2. 通信中转：向 Tawk 注入发送与接收逻辑 -->
     <script type="text/javascript">
       var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
       Tawk_API.lang = 'en';
-      Tawk_API.autoStart = true;
 
-      // 实时追加自定义 DOM 消息项
+      // 往自定义界面渲染消息
       function appendMessage(sender, text) {
         const msgContainer = document.getElementById('chat-messages');
         if (!msgContainer) return;
@@ -461,7 +454,7 @@
         msgContainer.scrollTop = msgContainer.scrollHeight;
       }
 
-      // 打开/关闭自定义面板
+      // 打开/关闭面板
       function toggleCustomChat() {
         const win = document.getElementById('merdex-chat-window');
         if (win) {
@@ -471,26 +464,80 @@
         }
       }
 
-      // 发送消息中转逻辑
+      // 将自研 UI 的输入框内容推送到 Tawk 隐秘通道
       function handleSendMessage() {
         const input = document.getElementById('chat-input-field');
         const text = input.value.trim();
         if (!text) return;
 
-        // 1. 渲染在自研 UI 界面
+        // 1. 本地渲染用户消息
         appendMessage('user', text);
         input.value = '';
 
-        // 2. 将消息传递至 Tawk 后台通道
-        if (typeof Tawk_API.addEvent === 'function') {
-          Tawk_API.addEvent('UserMessage', { message: text });
+        // 2. 保证 Tawk 已经展开，以便其文档中的输入元素可用
+        if (typeof Tawk_API.maximize === 'function') {
+          Tawk_API.maximize();
         }
+
+        // 3. 寻找 Tawk 隐藏 iframe 并填充发送真实文本
+        setTimeout(() => {
+          try {
+            const iframes = document.querySelectorAll('iframe[title*="chat widget"]');
+            let sent = false;
+
+            iframes.forEach((iframe) => {
+              try {
+                const doc = iframe.contentDocument || iframe.contentWindow.document;
+                const textarea = doc.querySelector('textarea, input[type="text"]');
+                if (textarea) {
+                  textarea.value = text;
+                  textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                  
+                  // 模拟 Enter 按键触发发送
+                  const enterEvent = new KeyboardEvent('keydown', {
+                    bubbles: true,
+                    cancelable: true,
+                    keyCode: 13,
+                    which: 13,
+                    key: 'Enter'
+                  });
+                  textarea.dispatchEvent(enterEvent);
+                  sent = true;
+                }
+              } catch (e) {
+                // 跨域读取受限时的降级防护
+              }
+            });
+
+            // 4. 如果没能注入 DOM，退回 API 提示模式
+            if (!sent && typeof Tawk_API.addEvent === 'function') {
+              Tawk_API.addEvent('message', { text: text });
+            }
+          } catch (err) {
+            console.error('Failed to dispatch message to Tawk channel:', err);
+          }
+        }, 100);
       }
 
       /* Tawk 后台事件回调处理 */
       Tawk_API.onLoad = function () {
         if (typeof Tawk_API.hideWidget === 'function') {
           Tawk_API.hideWidget();
+        }
+      };
+
+      // 监听客服发来的消息
+      Tawk_API.onChatMessageAgent = function(message) {
+        var msgText = typeof message === 'string' ? message : (message.message || message.text);
+        if (msgText) {
+          appendMessage('agent', msgText);
+
+          // 未打开面板时点亮红点
+          const win = document.getElementById('merdex-chat-window');
+          if (win && !win.classList.contains('open')) {
+            const badge = document.getElementById('chat-unread-badge');
+            if (badge) badge.classList.add('active');
+          }
         }
       };
 
