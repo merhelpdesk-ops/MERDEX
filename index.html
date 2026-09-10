@@ -5,7 +5,7 @@
     <link rel="icon" type="image/webp" href="/favicon.webp" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 
-    <!-- 1. 样式拦截：保留长连接渲染逻辑，但通过坐标绝对移出视口，100% 隐藏原生的任何元素 -->
+    <!-- 1. 样式拦截：双重保障隐藏原生 Tawk 组件 -->
     <style>
       iframe[title*="chat widget"],
       iframe[src*="tawk.to"],
@@ -17,10 +17,11 @@
         position: fixed !important;
         left: -9999px !important;
         top: -9999px !important;
-        width: 1px !important;
-        height: 1px !important;
-        opacity: 0.001 !important;
+        width: 0 !important;
+        height: 0 !important;
+        opacity: 0 !important;
         pointer-events: none !important;
+        visibility: hidden !important;
         z-index: -99999 !important;
       }
     </style>
@@ -437,15 +438,16 @@
       }
     </style>
 
-    <!-- 2. 全套消息通信与 API 机制 -->
+    <!-- 2. 重构版全套消息通信与 SDK 控制机制 -->
     <script type="text/javascript">
-      var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
+      var Tawk_API = Tawk_API || {};
+      var Tawk_LoadStart = new Date();
       Tawk_API.lang = 'en';
 
-      // 存储历史去重集合，避免消息重复渲染
+      // 强校验消息去重 Set，防止多通道重复上屏
       var renderedMsgSet = new Set();
 
-      // 渲染消息到自建 UI 界面
+      // 安全且去重的 DOM 消息追加方法
       function appendMessage(sender, rawContent, dateObj) {
         const msgContainer = document.getElementById('chat-messages');
         if (!msgContainer) return;
@@ -459,8 +461,10 @@
 
         if (!contentHtml) return;
 
-        // 生成唯一 Hash 避免历史消息去重时重复插入
-        const msgHash = `${sender}_${contentHtml}_${dateObj ? new Date(dateObj).getTime() : ''}`;
+        // 利用内容与时间作为唯一凭证（允许1秒差容错）
+        const timestamp = dateObj ? Math.floor(new Date(dateObj).getTime() / 1000) : Math.floor(Date.now() / 1000);
+        const msgHash = `${sender}_${contentHtml.trim()}_${timestamp}`;
+        
         if (renderedMsgSet.has(msgHash)) return;
         renderedMsgSet.add(msgHash);
 
@@ -470,7 +474,6 @@
         const bubble = document.createElement('div');
         bubble.className = 'msg-bubble';
         
-        // 允许解析后端传递过来的富文本格式（如图片/超链接）
         if (/<[a-z][\s\S]*>/i.test(contentHtml)) {
           bubble.innerHTML = contentHtml;
         } else {
@@ -486,35 +489,18 @@
         row.appendChild(time);
         msgContainer.appendChild(row);
 
+        // 智能平滑滚动到底部
         msgContainer.scrollTop = msgContainer.scrollHeight;
       }
 
-      // 同步并加载全量聊天历史
-      function loadChatHistory() {
-        if (typeof Tawk_API.getHistory === 'function') {
-          var history = Tawk_API.getHistory();
-          if (history && history.length > 0) {
-            const msgContainer = document.getElementById('chat-messages');
-            if (msgContainer) msgContainer.innerHTML = '';
-            renderedMsgSet.clear();
-            
-            history.forEach(function (msg) {
-              var sender = (msg.publisher === 'agent' || msg.type === 'agent') ? 'agent' : 'user';
-              appendMessage(sender, msg.message, msg.date);
-            });
-          }
-        }
-      }
-
-      // Tawk 核心初始化：激活底层会话，并隐藏原生视图
+      // 生命周期 1：SDK 加载完毕后强制隐藏原生小组件，激活长连接
       Tawk_API.onLoad = function () {
-        if (typeof Tawk_API.maximize === 'function') {
-          Tawk_API.maximize(); // 确保长连接处于完全激活状态
+        if (typeof Tawk_API.hideWidget === 'function') {
+          Tawk_API.hideWidget();
         }
-        loadChatHistory();
       };
 
-      // 实时接收客服发来的消息
+      // 生命周期 2：接收客服回应
       Tawk_API.onChatMessageAgent = function(message) {
         appendMessage('agent', message);
 
@@ -525,12 +511,12 @@
         }
       };
 
-      // 多端/游客侧消息变动回调
+      // 生命周期 3：接收访客端发送确认（由服务器广播，防止本地重复生成）
       Tawk_API.onChatMessageVisitor = function(message) {
         appendMessage('user', message);
       };
 
-      // 未读红点状态更新
+      // 生命周期 4：未读计数回调
       Tawk_API.onUnreadCountChanged = function(count) {
         const badge = document.getElementById('chat-unread-badge');
         if (badge) {
@@ -542,7 +528,7 @@
         }
       };
 
-      // 切换自定义聊天面板显隐
+      // 开关聊天窗体
       function toggleCustomChat() {
         const win = document.getElementById('merdex-chat-window');
         if (win) {
@@ -554,27 +540,27 @@
         }
       }
 
-      // 核心发消息逻辑
+      // 核心发消息方法（不再本地直接打 DOM，避免双重渲染）
       function handleSendMessage() {
         const input = document.getElementById('chat-input-field');
         const text = input.value.trim();
         if (!text) return;
 
-        // 本地实时先上屏
-        appendMessage('user', text);
-        input.value = '';
-
-        // 通过 Tawk API 投递消息给客服后台
+        // 优先使用官方 API 发送消息；如果还没准备好则本地兜底
         if (typeof Tawk_API.sendMessage === 'function') {
           Tawk_API.sendMessage(text, function(error) {
             if (error) {
               console.error('Message failed to deliver:', error);
             }
           });
+        } else {
+          appendMessage('user', text);
         }
+
+        input.value = '';
       }
 
-      // 悬浮球拖拽与点击处理
+      // 悬浮球手势与拖拽绑定
       document.addEventListener('DOMContentLoaded', function () {
         var widget = document.getElementById('custom-chat-trigger');
         if (!widget) return;
