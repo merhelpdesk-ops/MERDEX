@@ -3,9 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     
-    <!-- 1. 精确级黑洞样式：只针对未展开的小图标进行无影化，绝不破坏消息 Frame -->
+    <!-- 1. 终极防闪烁 CSS：只要 body 没挂上 .tawk-chat-open，Tawk 的任何东西都休想露出来 -->
     <style id="tawk-anti-flicker-style">
-      /* 强制隐藏默认的小气泡图标/按钮，无论它怎么更新样式都不显示 */
+      /* 永远封锁 Tawk 官方的原生悬浮气泡/小按钮 */
       iframe[src*="tawk.to"][title*="chat widget"],
       iframe[src*="tawk.to"][title*="tawk"],
       div[id*="tawk-bubble-container"],
@@ -16,13 +16,15 @@
         pointer-events: none !important;
       }
 
-      /* 当聊天框未展开时，隐藏它的外层容器（防止闪烁），但允许它后台正常加载 */
-      body:not(.tawk-chat-open) iframe[src*="tawk.to"]:not([style*="height: 100%"]):not([style*="height:100%"]) {
+      /* 未展开状态下：盲盒式锁定！所有 Tawk 相关的 iframe 和容器强制不可见且不占点击 */
+      body:not(.tawk-chat-open) iframe[src*="tawk.to"],
+      body:not(.tawk-chat-open) div[id*="tawk"] {
         opacity: 0 !important;
         pointer-events: none !important;
+        visibility: hidden !important;
       }
 
-      /* 用户点击展开后：解除一切限制，恢复原生的聊天交互 */
+      /* 展开状态下：毫秒级精准解封大窗，确保消息收发正常 */
       body.tawk-chat-open iframe[src*="tawk.to"] {
         display: block !important;
         opacity: 1 !important;
@@ -337,7 +339,7 @@
       })();
     </script>
 
-    <!-- 2. 精准无侵入式 SDK 控制器（不破坏 DOM 挂载逻辑） -->
+    <!-- 2. 精准无侵入式 SDK 控制器 -->
     <script type="text/javascript">
       var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
       Tawk_API.lang = 'en';
@@ -375,6 +377,7 @@
         } catch (error) { }
       }
 
+      /* 核心解决：在触发展开的同步代码中，0毫秒打上 class 标签，防止 CSS 逻辑出现死角 */
       function openMobileTawkChat() {
         document.body.classList.add('tawk-chat-open');
         showMobileTawkWidget(false);
