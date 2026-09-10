@@ -3,28 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/webp" href="/favicon.webp" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 
-    <!-- 【不破坏通信的零闪烁拦截】在生成瞬间强封样式，保留其后台通信能力 -->
+    <!-- 1. 超强 UI 劫持与零闪烁拦截脚本 -->
     <script>
-      (function suppressNativeTawkIcon() {
+      (function interceptTawkUI() {
         const observer = new MutationObserver((mutations) => {
           for (const mutation of mutations) {
             for (const node of mutation.addedNodes) {
               if (node.nodeType === 1 && node.tagName === 'IFRAME') {
                 const src = node.getAttribute('src') || '';
                 const title = node.getAttribute('title') || '';
-                const style = node.getAttribute('style') || '';
                 
-                // 识别原生气泡图标 iframe（排除了展开后的聊天大窗口）
+                // 判断是否是小气泡图标 (Widget Bubble)
                 const isTawkBubble = 
                   (src.includes('about:blank') || title.toLowerCase().includes('chat widget')) &&
-                  !style.includes('max-height: 100%') && 
-                  !style.includes('height: 100%') &&
-                  !style.includes('height:100%');
+                  !node.classList.contains('custom-tawk-chat-iframe');
 
                 if (isTawkBubble) {
-                  // 不 remove()，改用极低层级的隐藏，让它在后台默默工作
+                  // 强制隐藏原生气泡，后台静默运行
                   node.style.setProperty('display', 'none', 'important');
                   node.style.setProperty('visibility', 'hidden', 'important');
                   node.style.setProperty('opacity', '0', 'important');
@@ -54,18 +51,6 @@
     <meta name="description" content="MERDEX is a secure and high-speed aggregate platform." />
     <link rel="canonical" href="https://mer.finance/" />
 
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="MERDEX" />
-    <meta property="og:title" content="MERDEX" />
-    <meta property="og:description" content="MERDEX is a secure and high-speed aggregate platform." />
-    <meta property="og:url" content="https://mer.finance/" />
-    <meta property="og:image" content="https://mer.finance/merdex-social-card.png" />
-
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="MERDEX" />
-    <meta name="twitter:description" content="MERDEX is a secure and high-speed aggregate platform." />
-    <meta name="twitter:image" content="https://mer.finance/merdex-social-card.png" />
-
     <style>
       :root {
         --bg-main: #0d0e12;
@@ -73,6 +58,8 @@
         --border-color: rgba(255, 255, 255, 0.08);
         --text-active: #38bdf8;
         --text-inactive: #94a3b8;
+        --accent-cyan: #00f2fe;
+        --accent-blue: #4facfe;
       }
 
       body {
@@ -83,9 +70,7 @@
         -webkit-tap-highlight-color: transparent;
       }
 
-      .merdex-mobile-top-bar {
-        display: none;
-      }
+      .merdex-mobile-top-bar { display: none; }
 
       .merdex-nav-header {
         display: flex;
@@ -99,9 +84,7 @@
         white-space: nowrap;
       }
 
-      .merdex-nav-header::-webkit-scrollbar {
-        display: none;
-      }
+      .merdex-nav-header::-webkit-scrollbar { display: none; }
 
       .merdex-logo-container {
         display: flex;
@@ -149,9 +132,7 @@
       }
 
       .merdex-nav-item a:hover,
-      .merdex-nav-item.active a {
-        color: #ffffff;
-      }
+      .merdex-nav-item.active a { color: #ffffff; }
 
       .nav-icon {
         display: none;
@@ -201,9 +182,7 @@
           height: 30px;
         }
 
-        .merdex-mobile-top-bar .merdex-logo-img {
-          max-width: 120px;
-        }
+        .merdex-mobile-top-bar .merdex-logo-img { max-width: 120px; }
 
         .merdex-nav-header {
           position: fixed;
@@ -223,20 +202,9 @@
           box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
         }
 
-        .merdex-nav-header .merdex-logo-container {
-          display: none;
-        }
-
-        .merdex-nav-links {
-          width: 100%;
-          justify-content: space-between;
-          gap: 4px;
-        }
-
-        .merdex-nav-item {
-          flex: 1;
-        }
-
+        .merdex-nav-header .merdex-logo-container { display: none; }
+        .merdex-nav-links { width: 100%; justify-content: space-between; gap: 4px; }
+        .merdex-nav-item { flex: 1; }
         .merdex-nav-item a {
           flex-direction: column;
           gap: 3px;
@@ -248,298 +216,266 @@
           transition: all 0.15s ease-in-out;
           color: var(--text-inactive);
         }
-
-        .merdex-nav-item a:active {
-          transform: scale(0.92);
-        }
-
+        .merdex-nav-item a:active { transform: scale(0.92); }
         .merdex-nav-item.active a {
           color: var(--text-active);
           background: rgba(56, 189, 248, 0.08);
         }
-
-        .nav-icon {
-          display: block;
-          transition: transform 0.2s ease;
-        }
-
-        .merdex-nav-item.active .nav-icon {
-          transform: translateY(-1px);
-        }
-
-        .icon-wrapper {
-          position: relative;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-        }
-
+        .nav-icon { display: block; transition: transform 0.2s ease; }
+        .merdex-nav-item.active .nav-icon { transform: translateY(-1px); }
+        .icon-wrapper { position: relative; display: inline-flex; align-items: center; justify-content: center; }
         .green-dot {
           position: absolute;
           top: -1px;
           right: -3px;
           box-shadow: 0 0 6px #10b981;
         }
-        
-        div[role="dialog"] {
-          margin-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
-          max-height: calc(100vh - 120px) !important;
-          max-width: 94vw !important;
-          box-sizing: border-box !important;
-        }
-
-        div[role="dialog"] > div {
-          max-height: calc(100vh - 140px) !important;
-          overflow-y: auto !important;
-          overflow-x: hidden !important;
-          box-sizing: border-box !important;
-        }
-
-        div[role="dialog"] * {
-          max-width: 100% !important;
-          box-sizing: border-box !important;
-          word-break: break-word !important;
-        }
-
-        div[role="dialog"] div[style*="width"] {
-          width: 100% !important;
-          min-width: 0 !important;
-        }
       }
 
-      /* CSS 层死死压制原生气泡，不影响后台 JS 运行 */
+      /* ---------------------------------------------------- */
+      /* 2. 重写自定义 UI 样式 (悬浮球 + 窗口容器适配)          */
+      /* ---------------------------------------------------- */
+
+      /* 隐藏原生气泡 */
       iframe[src="about:blank"][referrerpolicy="no-referrer-when-downgrade"],
       iframe[title*="chat widget"]:not([style*="max-height:100%"]):not([style*="height: 100%"]) {
         display: none !important;
         visibility: hidden !important;
         opacity: 0 !important;
         pointer-events: none !important;
-        transform: scale(0) !important;
       }
 
-      /* 自定义客服悬浮球 */
-      #mobile-tawk-widget {
-        display: none;
-      }
-
-      #mobile-tawk-widget.is-visible {
-        align-items: center;
-        background: #1595ad;
-        border: 0;
-        border-radius: 50%;
-        bottom: calc(76px + env(safe-area-inset-bottom, 0px));
-        box-shadow: 0 5px 18px rgba(21, 149, 173, 0.4);
-        color: #fff;
-        cursor: grab;
-        display: flex;
-        height: 44px;
-        justify-content: center;
-        padding: 0;
+      /* 自定义悬浮球 (MERDEX 赛博暗黑风) */
+      #custom-chat-trigger {
         position: fixed;
-        right: 16px;
+        bottom: 80px;
+        right: 20px;
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+        box-shadow: 0 8px 24px rgba(0, 242, 254, 0.35), inset 0 0 10px rgba(255, 255, 255, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        cursor: pointer;
+        z-index: 2000000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.25s ease;
         touch-action: none;
         user-select: none;
-        width: 44px;
-        z-index: 2000000001;
-        transition: transform 0.15s ease, opacity 0.2s ease;
       }
 
-      #mobile-tawk-widget.is-dragging {
-        cursor: grabbing;
-        transform: scale(0.96);
+      #custom-chat-trigger:hover {
+        transform: scale(1.08);
+        box-shadow: 0 12px 30px rgba(0, 242, 254, 0.5);
       }
 
-      @media (min-width: 1001px) {
-        #mobile-tawk-widget.is-visible {
-          bottom: 30px;
-          right: 20px;
+      #custom-chat-trigger:active, #custom-chat-trigger.is-dragging {
+        transform: scale(0.92);
+      }
+
+      #custom-chat-trigger svg {
+        width: 26px;
+        height: 26px;
+        fill: #0d0e12;
+      }
+
+      /* 未读红点提醒 */
+      .chat-badge {
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        width: 12px;
+        height: 12px;
+        background-color: #ef4444;
+        border: 2px solid #0d0e12;
+        border-radius: 50%;
+        display: none;
+      }
+      .chat-badge.active { display: block; }
+
+      /* Tawk 真实聊天窗口的外层容器改造 */
+      body > iframe[title*="chat widget"][style*="height: 100%"],
+      body > iframe[title*="chat widget"][style*="max-height: 100%"] {
+        border-radius: 16px !important;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 255, 255, 0.2) !important;
+        overflow: hidden !important;
+        transition: all 0.3s ease !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      }
+
+      @media (max-width: 768px) {
+        #custom-chat-trigger {
+          bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+          right: 16px;
+          width: 48px;
+          height: 48px;
+        }
+
+        body > iframe[title*="chat widget"][style*="height: 100%"],
+        body > iframe[title*="chat widget"][style*="max-height: 100%"] {
+          bottom: calc(65px + env(safe-area-inset-bottom, 0px)) !important;
+          right: 0 !important;
+          left: 0 !important;
+          width: 100vw !important;
+          height: calc(100vh - 120px) !important;
+          border-radius: 20px 20px 0 0 !important;
         }
       }
     </style>
 
-    <script>
-      (function hideSpecificTabs() {
-        const observer = new MutationObserver(() => {
-          const root = document.getElementById('root');
-          if (root) {
-            const elements = root.querySelectorAll('button, div');
-            elements.forEach(el => {
-              const txt = (el.innerText || '').trim();
-              if ((txt === 'Swap' || txt === 'Perps') && el.children.length === 0) {
-                let parent = el.parentElement;
-                if (parent && parent.innerText.includes('Swap') && parent.innerText.includes('Perps') && !parent.innerText.includes('Connect')) {
-                  parent.style.display = 'none';
-                }
-              }
-            });
-          }
-        });
-        observer.observe(document, { childList: true, subtree: true });
-      })();
-    </script>
-
+    <!-- 3. Tawk.to JavaScript API 控制交互逻辑与穿透样式注入 -->
     <script type="text/javascript">
       var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
       Tawk_API.lang = 'en';
 
-      var mobileTawkPositionKey = 'merdex-mobile-tawk-position';
+      Tawk_API.autoStart = true;
 
-      function isMobileTawkScreen() {
-        return true;
+      function getCustomWidget() {
+        return document.getElementById('custom-chat-trigger');
       }
 
-      function getMobileTawkWidget() {
-        return document.getElementById('mobile-tawk-widget');
+      function updateBadge(unreadCount) {
+        var badge = document.getElementById('chat-unread-badge');
+        if (badge) {
+          if (unreadCount > 0) {
+            badge.classList.add('active');
+          } else {
+            badge.classList.remove('active');
+          }
+        }
       }
 
-      function showMobileTawkWidget(visible) {
-        var widget = getMobileTawkWidget();
-        if (widget) widget.classList.toggle('is-visible', visible && isMobileTawkScreen());
+      /* 穿透 DOM 向 iframe 内部注入暗黑样式 */
+      function injectInternalStyles() {
+        const iframes = document.querySelectorAll('iframe');
+        iframes.forEach((iframe) => {
+          try {
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            if (iframeDoc && !iframeDoc.getElementById('custom-tawk-dark-style')) {
+              const style = iframeDoc.createElement('style');
+              style.id = 'custom-tawk-dark-style';
+              style.textContent = `
+                /* 顶栏背景色修正为暗黑风 */
+                header, .tawk-header-container, [class*="header"] {
+                  background: #161b22 !important;
+                  color: #ffffff !important;
+                }
+                /* 主体聊天区域背景及文字颜色 */
+                body, html, .tawk-body-container, [class*="chat-window"], [class*="card"] {
+                  background-color: #0d0e12 !important;
+                  color: #e2e8f0 !important;
+                }
+                /* 底部输入框区域暗黑化 */
+                footer, .tawk-footer-container, [class*="footer"], textarea, input {
+                  background-color: #161b22 !important;
+                  color: #ffffff !important;
+                  border-color: rgba(255, 255, 255, 0.1) !important;
+                }
+                /* 系统图标与按钮反色调整 */
+                button, svg {
+                  fill: #38bdf8 !important;
+                }
+              `;
+              iframeDoc.head.appendChild(style);
+            }
+          } catch (e) {
+            // 受浏览器同源策略 (Same-Origin Policy) 保护时捕获异常
+          }
+        });
       }
 
-      function hideNativeTawkWidget() {
+      /* Tawk 生命周期与自定义事件响应 */
+      Tawk_API.onLoad = function () {
         if (typeof Tawk_API.hideWidget === 'function') {
           Tawk_API.hideWidget();
         }
-      }
-
-      function clampMobileTawkWidget() {
-        var widget = getMobileTawkWidget();
-        if (!widget || !widget.classList.contains('is-visible')) return;
-        var rect = widget.getBoundingClientRect();
-        var left = Math.max(0, Math.min(rect.left, window.innerWidth - rect.width));
-        var top = Math.max(0, Math.min(rect.top, window.innerHeight - rect.height));
-        widget.style.left = left + 'px';
-        widget.style.top = top + 'px';
-        widget.style.right = 'auto';
-        widget.style.bottom = 'auto';
-      }
-
-      function restoreMobileTawkPosition() {
-        var widget = getMobileTawkWidget();
-        if (!widget) return;
-        try {
-          var position = JSON.parse(localStorage.getItem(mobileTawkPositionKey));
-          if (position && Number.isFinite(position.left) && Number.isFinite(position.top)) {
-            widget.style.left = position.left + 'px';
-            widget.style.top = position.top + 'px';
-            widget.style.right = 'auto';
-            widget.style.bottom = 'auto';
-          }
-        } catch (error) { }
-        requestAnimationFrame(clampMobileTawkWidget);
-      }
-
-      function syncMobileTawkWidget() {
-        var maximized = typeof Tawk_API.isChatMaximized === 'function' && Tawk_API.isChatMaximized();
-        if (maximized) {
-          showMobileTawkWidget(false);
-        } else {
-          showMobileTawkWidget(true);
-          restoreMobileTawkPosition();
-        }
-      }
-
-      function openMobileTawkChat() {
-        showMobileTawkWidget(false);
-        if (typeof Tawk_API.maximize === 'function') {
-          Tawk_API.maximize();
-        } else if (typeof Tawk_API.start === 'function') {
-          Tawk_API.start();
-        }
-      }
-
-      /* Tawk 生命周期逻辑 */
-      Tawk_API.onBeforeLoad = function() {
-        hideNativeTawkWidget();
-      };
-
-      Tawk_API.onLoad = function () {
-        hideNativeTawkWidget();
-        syncMobileTawkWidget();
+        // 定时轮询确保新生成的 iframe 渲染时能成功被注入 CSS
+        setInterval(injectInternalStyles, 1000);
       };
 
       Tawk_API.onChatMaximized = function () {
-        showMobileTawkWidget(false);
+        var widget = getCustomWidget();
+        if (widget) widget.style.display = 'none';
+        updateBadge(0);
+        injectInternalStyles();
       };
 
       Tawk_API.onChatMinimized = function () {
-        hideNativeTawkWidget();
-        showMobileTawkWidget(true);
-        restoreMobileTawkPosition();
+        if (typeof Tawk_API.hideWidget === 'function') {
+          Tawk_API.hideWidget();
+        }
+        var widget = getCustomWidget();
+        if (widget) widget.style.display = 'flex';
       };
 
-      Tawk_API.onChatHidden = function () {
-        hideNativeTawkWidget();
-        showMobileTawkWidget(true);
-        restoreMobileTawkPosition();
+      Tawk_API.onUnreadCountChanged = function(count) {
+        updateBadge(count);
       };
 
-      window.addEventListener('resize', syncMobileTawkWidget);
+      function toggleCustomChat() {
+        if (typeof Tawk_API.isChatMaximized === 'function' && Tawk_API.isChatMaximized()) {
+          Tawk_API.minimize();
+        } else {
+          Tawk_API.maximize();
+        }
+      }
 
+      // 初始化自定义悬浮按钮手势 drag 拖拽逻辑 (兼容 PC/Touch)
       document.addEventListener('DOMContentLoaded', function () {
-        var widget = getMobileTawkWidget();
-        var drag = null;
-
+        var widget = getCustomWidget();
         if (!widget) return;
 
-        syncMobileTawkWidget();
+        var drag = null;
 
-        widget.addEventListener('pointerdown', function (event) {
+        widget.addEventListener('pointerdown', function (e) {
           var rect = widget.getBoundingClientRect();
           drag = {
-            pointerId: event.pointerId,
-            startX: event.clientX,
-            startY: event.clientY,
+            pointerId: e.pointerId,
+            startX: e.clientX,
+            startY: e.clientY,
             startLeft: rect.left,
             startTop: rect.top,
             moved: false
           };
-          widget.setPointerCapture(event.pointerId);
+          widget.setPointerCapture(e.pointerId);
           widget.classList.add('is-dragging');
-          event.preventDefault();
         });
 
-        widget.addEventListener('pointermove', function (event) {
-          if (!drag || drag.pointerId !== event.pointerId) return;
-          var deltaX = event.clientX - drag.startX;
-          var deltaY = event.clientY - drag.startY;
-          if (Math.hypot(deltaX, deltaY) > 5) drag.moved = true;
-          var left = Math.max(0, Math.min(drag.startLeft + deltaX, window.innerWidth - widget.offsetWidth));
-          var top = Math.max(0, Math.min(drag.startTop + deltaY, window.innerHeight - widget.offsetHeight));
+        widget.addEventListener('pointermove', function (e) {
+          if (!drag || drag.pointerId !== e.pointerId) return;
+          var dx = e.clientX - drag.startX;
+          var dy = e.clientY - drag.startY;
+          if (Math.hypot(dx, dy) > 5) drag.moved = true;
+
+          var left = Math.max(10, Math.min(drag.startLeft + dx, window.innerWidth - widget.offsetWidth - 10));
+          var top = Math.max(10, Math.min(drag.startTop + dy, window.innerHeight - widget.offsetHeight - 10));
+
           widget.style.left = left + 'px';
           widget.style.top = top + 'px';
           widget.style.right = 'auto';
           widget.style.bottom = 'auto';
         });
 
-        widget.addEventListener('pointerup', function (event) {
-          if (!drag || drag.pointerId !== event.pointerId) return;
-          widget.releasePointerCapture(event.pointerId);
+        widget.addEventListener('pointerup', function (e) {
+          if (!drag || drag.pointerId !== e.pointerId) return;
+          widget.releasePointerCapture(e.pointerId);
           widget.classList.remove('is-dragging');
-          if (drag.moved) {
-            try {
-              localStorage.setItem(mobileTawkPositionKey, JSON.stringify({
-                left: widget.offsetLeft,
-                top: widget.offsetTop
-              }));
-            } catch (error) { }
-          } else {
-            openMobileTawkChat();
+
+          if (!drag.moved) {
+            toggleCustomChat();
           }
           drag = null;
         });
 
         widget.addEventListener('pointercancel', function () {
-          widget.classList.remove('is-dragging');
+          if (widget) widget.classList.remove('is-dragging');
           drag = null;
-        });
-
-        widget.addEventListener('click', function (event) {
-          if (event.detail === 0) openMobileTawkChat();
         });
       });
 
+      // 加载 Tawk 脚本
       (function () {
         var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
         s1.async = true;
@@ -598,15 +534,13 @@
 
     <div id="root"></div>
 
-    <button id="mobile-tawk-widget" type="button" aria-label="Chat widget" title="Chat widget">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" height="32" width="32" role="img"
-        aria-labelledby="tawk-open-icon-title tawk-open-icon-description">
-        <title id="tawk-open-icon-title">Opens Chat</title>
-        <desc id="tawk-open-icon-description">This icon opens the chat window.</desc>
-        <path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"
-          d="M400 26.2c-193.3 0-350 156.7-350 350 0 136.2 77.9 254.3 191.5 312.1 15.4 8.1 31.4 15.1 48.1 20.8l-16.5 63.5c-2 7.8 5.4 14.7 13 12.1l229.8-77.6c14.6-5.3 28.8-11.6 42.4-18.7C672 630.6 750 512.5 750 376.2c0-193.3-156.7-350-350-350zm211.1 510.7c-10.8 26.5-41.9 77.2-121.5 77.2-79.9 0-110.9-51-121.6-77.4-2.8-6.8 5-13.4 13.8-11.8 76.2 13.7 147.7 13 215.3.3 8.9-1.8 16.8 4.8 14 11.7z" />
+    <!-- 自定义暗黑科技风客服悬浮球 -->
+    <div id="custom-chat-trigger" role="button" aria-label="Customer Support">
+      <span id="chat-unread-badge" class="chat-badge"></span>
+      <svg viewBox="0 0 24 24">
+        <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
       </svg>
-    </button>
+    </div>
 
     <script type="module" src="/app/main.tsx"></script>
   </body>
