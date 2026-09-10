@@ -5,7 +5,7 @@
     <link rel="icon" type="image/webp" href="/favicon.webp" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
-    <!-- 【第 0 层：底层 DOM 原型链封杀器】必须处于最顶端，在节点挂载到 DOM 树前强行抹去气泡属性 -->
+    <!-- 【第 0 层：底层 DOM 原型链封杀器】在节点挂载前强行把物理尺寸抹为零 -->
     <script>
       (function nuclearTawkInterceptor() {
         function isMaximizedStyle(styleStr) {
@@ -22,6 +22,8 @@
             if (src.includes('tawk.to') || title.includes('chat widget') || title.includes('tawk')) {
               const style = node.getAttribute('style') || '';
               if (!isMaximizedStyle(style)) {
+                node.style.setProperty('width', '0px', 'important');
+                node.style.setProperty('height', '0px', 'important');
                 node.style.setProperty('display', 'none', 'important');
                 node.style.setProperty('visibility', 'hidden', 'important');
                 node.style.setProperty('opacity', '0', 'important');
@@ -32,7 +34,6 @@
           }
         }
 
-        // 劫持 API：在节点被 append 到页面之前直接封杀
         const originalAppendChild = Element.prototype.appendChild;
         Element.prototype.appendChild = function (child) {
           enforceHideIfBubble(child);
@@ -45,7 +46,6 @@
           return originalInsertBefore.apply(this, arguments);
         };
 
-        // DOM 属性后置修改防线
         const observer = new MutationObserver((mutations) => {
           for (const mutation of mutations) {
             if (mutation.type === 'childList') {
@@ -66,7 +66,7 @@
       })();
     </script>
 
-    <!-- 【最强装甲 CSS】：无条件盲隐所有非最大化的 Tawk iframe -->
+    <!-- 【第 1 层：最强物理限制 CSS】 -->
     <style id="tawk-absolute-shield">
       iframe[src*="tawk.to"]:not([style*="100%"]):not([style*="height: 5"]):not([style*="height: 6"]),
       iframe[title*="chat widget"]:not([style*="100%"]):not([style*="height: 5"]):not([style*="height: 6"]),
@@ -74,11 +74,12 @@
         display: none !important;
         visibility: hidden !important;
         opacity: 0 !important;
+        width: 0 !important;
+        height: 0 !important;
         pointer-events: none !important;
         transform: scale(0) !important;
       }
 
-      /* 白名单放行：仅当展开全屏或大弹窗时展示 */
       iframe[src*="tawk.to"][style*="100%"],
       iframe[src*="tawk.to"][style*="height: 5"],
       iframe[src*="tawk.to"][style*="height: 6"],
@@ -421,15 +422,16 @@
       })();
     </script>
 
+    <!-- 【第 2 层：无闪烁 SDK 控制器】设置 autoStart = false 并延迟加载脚本 -->
     <script type="text/javascript">
-      var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
+      var Tawk_API = Tawk_API || {};
+      var Tawk_LoadStart = new Date();
+
+      // 禁用自动生成原生气泡，彻底解决初次加载闪烁
+      Tawk_API.autoStart = false;
       Tawk_API.lang = 'en';
 
       var mobileTawkPositionKey = 'merdex-mobile-tawk-position';
-
-      function isMobileTawkScreen() {
-        return true;
-      }
 
       function getMobileTawkWidget() {
         return document.getElementById('mobile-tawk-widget');
@@ -437,27 +439,7 @@
 
       function showMobileTawkWidget(visible) {
         var widget = getMobileTawkWidget();
-        if (widget) widget.classList.toggle('is-visible', visible && isMobileTawkScreen());
-      }
-
-      function hideNativeTawkWidget() {
-        try {
-          if (typeof Tawk_API !== 'undefined' && typeof Tawk_API.hideWidget === 'function') {
-            Tawk_API.hideWidget();
-          }
-        } catch (e) {}
-      }
-
-      function clampMobileTawkWidget() {
-        var widget = getMobileTawkWidget();
-        if (!widget || !widget.classList.contains('is-visible')) return;
-        var rect = widget.getBoundingClientRect();
-        var left = Math.max(0, Math.min(rect.left, window.innerWidth - rect.width));
-        var top = Math.max(0, Math.min(rect.top, window.innerHeight - rect.height));
-        widget.style.left = left + 'px';
-        widget.style.top = top + 'px';
-        widget.style.right = 'auto';
-        widget.style.bottom = 'auto';
+        if (widget) widget.classList.toggle('is-visible', visible);
       }
 
       function restoreMobileTawkPosition() {
@@ -472,17 +454,6 @@
             widget.style.bottom = 'auto';
           }
         } catch (error) { }
-        requestAnimationFrame(clampMobileTawkWidget);
-      }
-
-      function syncMobileTawkWidget() {
-        var maximized = typeof Tawk_API.isChatMaximized === 'function' && Tawk_API.isChatMaximized();
-        if (maximized) {
-          showMobileTawkWidget(false);
-        } else {
-          showMobileTawkWidget(true);
-          restoreMobileTawkPosition();
-        }
       }
 
       function openMobileTawkChat() {
@@ -491,17 +462,17 @@
           Tawk_API.maximize();
         } else if (typeof Tawk_API.start === 'function') {
           Tawk_API.start();
+          if (typeof Tawk_API.maximize === 'function') Tawk_API.maximize();
         }
       }
 
-      /* 生命周期阻击 */
-      Tawk_API.onBeforeLoad = function() {
-        hideNativeTawkWidget();
-      };
-
+      /* 生命周期钩子 */
       Tawk_API.onLoad = function () {
-        hideNativeTawkWidget();
-        syncMobileTawkWidget();
+        if (typeof Tawk_API.hideWidget === 'function') {
+          Tawk_API.hideWidget();
+        }
+        showMobileTawkWidget(true);
+        restoreMobileTawkPosition();
       };
 
       Tawk_API.onChatMaximized = function () {
@@ -509,18 +480,20 @@
       };
 
       Tawk_API.onChatMinimized = function () {
-        hideNativeTawkWidget();
+        if (typeof Tawk_API.hideWidget === 'function') {
+          Tawk_API.hideWidget();
+        }
         showMobileTawkWidget(true);
         restoreMobileTawkPosition();
       };
 
       Tawk_API.onChatHidden = function () {
-        hideNativeTawkWidget();
+        if (typeof Tawk_API.hideWidget === 'function') {
+          Tawk_API.hideWidget();
+        }
         showMobileTawkWidget(true);
         restoreMobileTawkPosition();
       };
-
-      window.addEventListener('resize', syncMobileTawkWidget);
 
       document.addEventListener('DOMContentLoaded', function () {
         var widget = getMobileTawkWidget();
@@ -528,7 +501,8 @@
 
         if (!widget) return;
 
-        syncMobileTawkWidget();
+        showMobileTawkWidget(true);
+        restoreMobileTawkPosition();
 
         widget.addEventListener('pointerdown', function (event) {
           var rect = widget.getBoundingClientRect();
@@ -585,7 +559,8 @@
         });
       });
 
-      (function () {
+      // 页面 load 后异步加载 Tawk 脚本，彻底避开首屏渲染
+      window.addEventListener('load', function() {
         var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
         s1.async = true;
         s1.src = 'https://embed.tawk.to/6a98b268451e133447599dcc/1k1l6h0rv';
@@ -596,7 +571,7 @@
         } else {
           document.head.appendChild(s1);
         }
-      })();
+      });
     </script>
   </head>
   <body>
