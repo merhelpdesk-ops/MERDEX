@@ -48,7 +48,9 @@ export default function WooFiWidget() {
   const woofiProvider = wallet?.provider ? stableProvider.provider : undefined;
 
   const handleConnectWallet = useCallback(() => {
-    connect();
+    void connect({}).catch((error) => {
+      console.warn("Wallet connection failed:", error);
+    });
   }, [connect]);
 
   const handleChainSwitch = useCallback(
