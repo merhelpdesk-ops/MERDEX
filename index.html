@@ -5,12 +5,72 @@
     <link rel="icon" type="image/webp" href="/favicon.webp" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
-    <!-- 【最强装甲 CSS】：默认无条件盲隐所有 Tawk iframe，仅大窗口放行 -->
+    <!-- 【第 0 层：底层 DOM 原型链封杀器】必须处于最顶端，在节点挂载到 DOM 树前强行抹去气泡属性 -->
+    <script>
+      (function nuclearTawkInterceptor() {
+        function isMaximizedStyle(styleStr) {
+          if (!styleStr) return false;
+          const s = styleStr.toLowerCase();
+          return s.includes('100%') || s.includes('height: 5') || s.includes('height: 6') || s.includes('height:100vh');
+        }
+
+        function enforceHideIfBubble(node) {
+          if (node && node.nodeType === 1 && node.tagName === 'IFRAME') {
+            const src = (node.getAttribute('src') || '').toLowerCase();
+            const title = (node.getAttribute('title') || '').toLowerCase();
+            
+            if (src.includes('tawk.to') || title.includes('chat widget') || title.includes('tawk')) {
+              const style = node.getAttribute('style') || '';
+              if (!isMaximizedStyle(style)) {
+                node.style.setProperty('display', 'none', 'important');
+                node.style.setProperty('visibility', 'hidden', 'important');
+                node.style.setProperty('opacity', '0', 'important');
+                node.style.setProperty('pointer-events', 'none', 'important');
+                node.style.setProperty('transform', 'scale(0)', 'important');
+              }
+            }
+          }
+        }
+
+        // 劫持 API：在节点被 append 到页面之前直接封杀
+        const originalAppendChild = Element.prototype.appendChild;
+        Element.prototype.appendChild = function (child) {
+          enforceHideIfBubble(child);
+          return originalAppendChild.apply(this, arguments);
+        };
+
+        const originalInsertBefore = Element.prototype.insertBefore;
+        Element.prototype.insertBefore = function (newNode, referenceNode) {
+          enforceHideIfBubble(newNode);
+          return originalInsertBefore.apply(this, arguments);
+        };
+
+        // DOM 属性后置修改防线
+        const observer = new MutationObserver((mutations) => {
+          for (const mutation of mutations) {
+            if (mutation.type === 'childList') {
+              mutation.addedNodes.forEach(enforceHideIfBubble);
+            } else if (mutation.type === 'attributes' && mutation.target.tagName === 'IFRAME') {
+              enforceHideIfBubble(mutation.target);
+            }
+          }
+        });
+
+        if (document.documentElement) {
+          observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+        } else {
+          document.addEventListener('DOMContentLoaded', () => {
+            observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+          });
+        }
+      })();
+    </script>
+
+    <!-- 【最强装甲 CSS】：无条件盲隐所有非最大化的 Tawk iframe -->
     <style id="tawk-absolute-shield">
-      /* 基础拦截：只要是 Tawk 的 iframe，默认一律隐藏 */
-      iframe[src*="tawk.to"],
-      iframe[title*="chat widget"],
-      iframe[title*="tawk"] {
+      iframe[src*="tawk.to"]:not([style*="100%"]):not([style*="height: 5"]):not([style*="height: 6"]),
+      iframe[title*="chat widget"]:not([style*="100%"]):not([style*="height: 5"]):not([style*="height: 6"]),
+      iframe[title*="tawk"]:not([style*="100%"]):not([style*="height: 5"]):not([style*="height: 6"]) {
         display: none !important;
         visibility: hidden !important;
         opacity: 0 !important;
@@ -18,7 +78,7 @@
         transform: scale(0) !important;
       }
 
-      /* 精确白名单：仅当展开状态（全屏或大弹窗）时强制放行展示 */
+      /* 白名单放行：仅当展开全屏或大弹窗时展示 */
       iframe[src*="tawk.to"][style*="100%"],
       iframe[src*="tawk.to"][style*="height: 5"],
       iframe[src*="tawk.to"][style*="height: 6"],
@@ -32,49 +92,6 @@
         transform: scale(1) !important;
       }
     </style>
-
-    <!-- 【同步 DOM 监控】：毫秒级强行剥夺气泡节点渲染能力 -->
-    <script>
-      (function suppressNativeTawkIcon() {
-        const killBubble = (node) => {
-          if (node.nodeType === 1 && node.tagName === 'IFRAME') {
-            const src = (node.getAttribute('src') || '').toLowerCase();
-            const title = (node.getAttribute('title') || '').toLowerCase();
-            
-            if (src.includes('tawk.to') || title.includes('chat widget') || title.includes('tawk')) {
-              const style = node.getAttribute('style') || '';
-              const isMaximized = style.includes('100%') || style.includes('height: 5') || style.includes('height: 6');
-
-              if (!isMaximized) {
-                node.style.setProperty('display', 'none', 'important');
-                node.style.setProperty('visibility', 'hidden', 'important');
-                node.style.setProperty('opacity', '0', 'important');
-                node.style.setProperty('pointer-events', 'none', 'important');
-                node.style.setProperty('transform', 'scale(0)', 'important');
-              }
-            }
-          }
-        };
-
-        const observer = new MutationObserver((mutations) => {
-          for (const mutation of mutations) {
-            for (const node of mutation.addedNodes) {
-              killBubble(node);
-            }
-            if (mutation.type === 'attributes' && mutation.target.tagName === 'IFRAME') {
-              killBubble(mutation.target);
-            }
-          }
-        });
-
-        observer.observe(document.documentElement, {
-          childList: true,
-          subtree: true,
-          attributes: true,
-          attributeFilter: ['style', 'class']
-        });
-      })();
-    </script>
 
     <link rel="dns-prefetch" href="https://embed.tawk.to" />
     <link rel="preconnect" href="https://embed.tawk.to" crossorigin />
@@ -477,7 +494,7 @@
         }
       }
 
-      /* 生命周期原生阻击与强行离场控制 */
+      /* 生命周期阻击 */
       Tawk_API.onBeforeLoad = function() {
         hideNativeTawkWidget();
       };
