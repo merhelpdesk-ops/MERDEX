@@ -2,28 +2,16 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    
-    <style id="tawk-anti-flicker-style">
-      iframe[src*="tawk.to"][title*="chat widget"],
-      iframe[src*="tawk.to"][title*="tawk"],
-      div[id^="tawk-bubble"],
-      div[class*="tawk-min-container"] {
-        display: none !important;
-        opacity: 0 !important;
-        visibility: hidden !important;
-        pointer-events: none !important;
-        transform: translate3d(-9999px, -9999px, 0) !important;
-      }
 
+    <style id="tawk-anti-flicker-style">
       body:not(.tawk-chat-open) iframe[src*="tawk.to"],
-      body:not(.tawk-chat-open) div[id^="tawk-widget"],
-      body:not(.tawk-chat-open) div[class^="tawk-"] {
+      body:not(.tawk-chat-open) div[id^="tawk-bubble"],
+      body:not(.tawk-chat-open) div[class*="tawk-min-container"] {
         display: none !important;
         opacity: 0 !important;
         visibility: hidden !important;
         pointer-events: none !important;
         transform: translate3d(-9999px, -9999px, 0) !important;
-        transition: none !important;
       }
 
       body.tawk-chat-open iframe[src*="tawk.to"] {
@@ -34,7 +22,6 @@
         transform: none !important;
       }
     </style>
-
 
     <link rel="icon" type="image/webp" href="/favicon.webp" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -327,6 +314,8 @@
 
       var mobileTawkPositionKey = 'merdex-mobile-tawk-position';
       var tawkReady = false;
+      var tawkOpenRetries = 0;
+      var TAWK_DIRECT_LINK = 'https://tawk.to/chat/6a98b268451e133447599dcc/1k1l6h0rv';
 
       function getMobileTawkWidget() {
         return document.getElementById('mobile-tawk-widget');
@@ -360,21 +349,24 @@
       }
 
       function openMobileTawkChat() {
-        // 脚本未加载完成，稍后重试
+        // 脚本未加载完成，循环重试（最多约15秒），不再只试一次
         if (!tawkReady) {
-          setTimeout(function () {
-            if (tawkReady) openMobileTawkChat();
-          }, 300);
+          if (++tawkOpenRetries < 50) {
+            setTimeout(openMobileTawkChat, 300);
+          } else {
+            tawkOpenRetries = 0;
+            window.open(TAWK_DIRECT_LINK, '_blank');
+          }
           return;
         }
+        tawkOpenRetries = 0;
 
         // 先加 class：样式表 body.tawk-chat-open 规则立即生效，iframe 可见。
-        // 不再依赖 requestAnimationFrame，也不写任何内联 important 样式，
-        // 避免内联 important 永久压过样式表导致窗口被焊死在隐藏状态。
         document.body.classList.add('tawk-chat-open');
         showMobileTawkWidget(false);
 
         try {
+          if (typeof Tawk_API.showWidget === 'function') Tawk_API.showWidget();
           if (typeof Tawk_API.start === 'function') Tawk_API.start();
           if (typeof Tawk_API.maximize === 'function') Tawk_API.maximize();
           else if (typeof Tawk_API.toggle === 'function') Tawk_API.toggle();
@@ -410,7 +402,6 @@
       };
 
       Tawk_API.onChatMinimized = backToCustomBubble;
-      Tawk_API.onChatHidden = backToCustomBubble;
 
       document.addEventListener('DOMContentLoaded', function () {
         var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
@@ -418,6 +409,10 @@
         s1.src = 'https://embed.tawk.to/6a98b268451e133447599dcc/1k1l6h0rv';
         s1.charset = 'UTF-8';
         s1.setAttribute('crossorigin', '*');
+        s1.onerror = function () {
+          // embed.tawk.to 请求失败（ID失效/被拦截/网络不通）时兜底
+          window.open(TAWK_DIRECT_LINK, '_blank');
+        };
         if (s0 && s0.parentNode) {
           s0.parentNode.insertBefore(s1, s0);
         } else {
