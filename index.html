@@ -5,8 +5,9 @@
 
     <style id="tawk-anti-flicker-style">
       body:not(.tawk-chat-open) iframe[src*="tawk.to"],
-      body:not(.tawk-chat-open) div[id^="tawk-bubble"],
-      body:not(.tawk-chat-open) div[class*="tawk-min-container"] {
+      body:not(.tawk-chat-open) iframe[title*="chat"],
+      body:not(.tawk-chat-open) div[id^="tawk"],
+      body:not(.tawk-chat-open) div[class*="tawk"] {
         display: none !important;
         opacity: 0 !important;
         visibility: hidden !important;
@@ -14,7 +15,8 @@
         transform: translate3d(-9999px, -9999px, 0) !important;
       }
 
-      body.tawk-chat-open iframe[src*="tawk.to"] {
+      body.tawk-chat-open iframe[src*="tawk.to"],
+      body.tawk-chat-open iframe[title*="chat"] {
         display: block !important;
         opacity: 1 !important;
         visibility: visible !important;
@@ -341,15 +343,18 @@
       }
 
       function backToCustomBubble() {
-        // 只靠 CSS class 隐藏原生 widget，绝不调用 hideWidget()，
-        // 保持 Tawk 内部处于 minimized 状态，确保 maximize() 永远可用
         document.body.classList.remove('tawk-chat-open');
         showMobileTawkWidget(true);
         restoreMobileTawkPosition();
+
+        try {
+          if (typeof Tawk_API.hideWidget === 'function') {
+            Tawk_API.hideWidget();
+          }
+        } catch (e) {}
       }
 
       function openMobileTawkChat() {
-        // 脚本未加载完成，循环重试（最多约15秒），不再只试一次
         if (!tawkReady) {
           if (++tawkOpenRetries < 50) {
             setTimeout(openMobileTawkChat, 300);
@@ -361,7 +366,6 @@
         }
         tawkOpenRetries = 0;
 
-        // 先加 class：样式表 body.tawk-chat-open 规则立即生效，iframe 可见。
         document.body.classList.add('tawk-chat-open');
         showMobileTawkWidget(false);
 
@@ -372,7 +376,6 @@
           else if (typeof Tawk_API.toggle === 'function') Tawk_API.toggle();
         } catch (e) {}
 
-        // 兜底：400ms 后仍未最大化，再试一次 toggle
         setTimeout(function () {
           try {
             if (typeof Tawk_API.isChatMaximized === 'function'
@@ -386,11 +389,10 @@
 
       Tawk_API.onLoad = function () {
         tawkReady = true;
-        // 注意：这里刻意不调用 hideWidget()。
-        // 原生气泡由 CSS（body:not(.tawk-chat-open)）隐藏，widget 保持正常状态。
         if (Tawk_API.isChatMaximized && Tawk_API.isChatMaximized()) {
           document.body.classList.add('tawk-chat-open');
           showMobileTawkWidget(false);
+          if (typeof Tawk_API.showWidget === 'function') Tawk_API.showWidget();
         } else {
           backToCustomBubble();
         }
@@ -410,7 +412,6 @@
         s1.charset = 'UTF-8';
         s1.setAttribute('crossorigin', '*');
         s1.onerror = function () {
-          // embed.tawk.to 请求失败（ID失效/被拦截/网络不通）时兜底
           window.open(TAWK_DIRECT_LINK, '_blank');
         };
         if (s0 && s0.parentNode) {
