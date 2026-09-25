@@ -14,13 +14,6 @@ export default function SwapIndex() {
     <>
       {renderSEOTags(pageMeta, pageTitle)}
       <div className="flex h-full w-full flex-col items-center p-4 pt-8">
-        <h1 className="bg-gradient-to-r from-cyan-400 via-emerald-300 to-lime-300 bg-clip-text text-center text-5xl font-bold tracking-tight text-transparent sm:text-6xl">
-          MERDEX
-        </h1>
-        <p className="mb-8 mt-3 max-w-2xl text-center text-sm text-white/60 sm:text-base">
-          MERDEX is a secure and high-speed aggregate platform.
-        </p>
-
         <div className="mb-4 grid w-full max-w-[590px] grid-cols-2 rounded-2xl border border-white/10 bg-white/[0.06] p-2">
           <button
             type="button"
