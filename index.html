@@ -40,22 +40,20 @@
 
     <title>MERDEX</title>
 
-    <!-- 基础 SEO 描述（谷歌/搜索平台完整原样） -->
     <meta name="description" content="MERDEX provides decentralized exchange transactions and cryptocurrency contracts and derivatives transactions." />
     <link rel="canonical" href="https://mer.finance/" />
 
-    <!-- Open Graph 社交平台配置（Telegram / Discord / 微信等，完整原样展示长英文） -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="MERDEX" />
     <meta property="og:title" content="MERDEX" />
     <meta property="og:description" content="MERDEX provides decentralized exchange transactions and cryptocurrency contracts and derivatives transactions." />
     <meta property="og:url" content="https://mer.finance/" />
-    <meta property="og:image" content="https://mer.finance/merdex-social-card.png" />
+    <meta property="og:image" content="https://mer.finance/merdex-social-card.png?v=2" />
 
-    <!-- Twitter / X 专属配置（仅保留卡片格式和大图，不设 twitter:description 避免污染 Telegram） -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="MERDEX" />
-    <meta name="twitter:image" content="https://mer.finance/merdex-social-card.png" />
+    <meta name="twitter:description" content="MERDEX provides decentralized exchange transactions and cryptocurrency contracts and derivatives transactions." />
+    <meta name="twitter:image" content="https://mer.finance/merdex-social-card.png?v=2" />
 
     <style>
       :root {
@@ -337,8 +335,10 @@
         try {
           var position = JSON.parse(localStorage.getItem(mobileTawkPositionKey));
           if (position && Number.isFinite(position.left) && Number.isFinite(position.top)) {
-            widget.style.left = position.left + 'px';
-            widget.style.top = position.top + 'px';
+            var maxLeft = Math.max(0, window.innerWidth - 50);
+            var maxTop = Math.max(0, window.innerHeight - 50);
+            widget.style.left = Math.min(position.left, maxLeft) + 'px';
+            widget.style.top = Math.min(position.top, maxTop) + 'px';
             widget.style.right = 'auto';
             widget.style.bottom = 'auto';
           }
